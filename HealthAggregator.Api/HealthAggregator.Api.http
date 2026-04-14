@@ -1,0 +1,6 @@
+@HealthAggregator.Api_HostAddress = https://localhost:5310
+
+GET {{HealthAggregator.Api_HostAddress}}/
+Accept: application/json
+
+###

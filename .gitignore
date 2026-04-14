@@ -1,0 +1,12 @@
+**/bin/
+**/obj/
+**/node_modules/
+**/.svelte-kit/
+**/.vite/
+**/build/
+**/dist/
+*.db
+*.db-shm
+*.db-wal
+.DS_Store
+HealthAggregator.Api/Properties/ServiceDependencies/
