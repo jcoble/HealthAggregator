@@ -29,6 +29,7 @@ builder.Services.AddDbContext<HealthAggregatorDbContext>(options =>
     options.UseSqlite($"Data Source={databasePath}"));
 builder.Services.AddScoped<FhirImportService>();
 builder.Services.AddScoped<ReadOnlyAssistantService>();
+builder.Services.AddHttpClient<SmartConfigurationClient>();
 builder.Services.AddHttpClient<EpicFhirClient>();
 builder.Services.AddCors(options =>
 {

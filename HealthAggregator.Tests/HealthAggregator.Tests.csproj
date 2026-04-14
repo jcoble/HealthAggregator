@@ -20,6 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\HealthAggregator.Api\HealthAggregator.Api.csproj" />
     <ProjectReference Include="..\HealthAggregator.Core\HealthAggregator.Core.csproj" />
     <ProjectReference Include="..\HealthAggregator.Data\HealthAggregator.Data.csproj" />
   </ItemGroup>

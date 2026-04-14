@@ -17,6 +17,7 @@ public sealed class EpicFhirClient(
     HttpClient httpClient,
     HealthAggregatorDbContext db,
     FhirImportService importer,
+    SmartConfigurationClient smartConfig,
     IOptions<EpicSettings> settings)
 {
     private static readonly string[] PatientScopes =
@@ -44,6 +45,21 @@ public sealed class EpicFhirClient(
         if (string.IsNullOrWhiteSpace(_settings.ClientId))
         {
             return EpicConnectResult.MissingClientId(organization);
+        }
+
+        if (string.IsNullOrWhiteSpace(organization.FhirBaseUrl))
+        {
+            return EpicConnectResult.Failed(organization, $"FhirBaseUrl is not configured for {organization.Name}. Set it in appsettings.json.");
+        }
+
+        SmartConfiguration discovered;
+        try
+        {
+            discovered = await smartConfig.ResolveAsync(organization.FhirBaseUrl, cancellationToken);
+        }
+        catch (SmartConfigurationException ex)
+        {
+            return EpicConnectResult.Failed(organization, $"Smart configuration unavailable for {organization.Name}: {ex.Message}");
         }
 
         var state = Base64UrlTextEncoder.Encode(RandomNumberGenerator.GetBytes(32));
@@ -77,7 +93,7 @@ public sealed class EpicFhirClient(
             ["code_challenge_method"] = "S256"
         };
 
-        return EpicConnectResult.Ready(organization, QueryHelpers.AddQueryString(organization.AuthorizationEndpoint, query));
+        return EpicConnectResult.Ready(organization, QueryHelpers.AddQueryString(discovered.AuthorizationEndpoint, query));
     }
 
     public async Task<EpicConnection> CompleteCallbackAsync(string code, string state, CancellationToken cancellationToken)
@@ -91,7 +107,8 @@ public sealed class EpicFhirClient(
         }
 
         var organization = FindOrganization(authState.OrganizationId);
-        using var response = await httpClient.PostAsync(organization.TokenEndpoint, new FormUrlEncodedContent(new Dictionary<string, string>
+        var discovered = await smartConfig.ResolveAsync(organization.FhirBaseUrl, cancellationToken);
+        using var response = await httpClient.PostAsync(discovered.TokenEndpoint, new FormUrlEncodedContent(new Dictionary<string, string>
         {
             ["grant_type"] = "authorization_code",
             ["code"] = code,
@@ -243,6 +260,9 @@ public sealed record EpicConnectResult(EpicOrganization Organization, string? Au
 
     public static EpicConnectResult MissingClientId(EpicOrganization organization) =>
         new(organization, null, "Set Epic:ClientId before starting the SMART on FHIR authorization flow.");
+
+    public static EpicConnectResult Failed(EpicOrganization organization, string error) =>
+        new(organization, null, error);
 }
 
 public static class ImportSummaryExtensions

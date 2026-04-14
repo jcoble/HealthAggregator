@@ -92,4 +92,14 @@ public sealed class EpicIntegrationsController(
         var summary = await epicClient.SyncConnectionAsync(connectionId, cancellationToken);
         return Ok(summary);
     }
+
+    [HttpDelete("connections/{id:int}")]
+    public async Task<IActionResult> Disconnect([FromRoute] int id, CancellationToken cancellationToken)
+    {
+        var connection = await db.EpicConnections.SingleOrDefaultAsync(c => c.Id == id, cancellationToken);
+        if (connection is null) return NotFound();
+        db.EpicConnections.Remove(connection);
+        await db.SaveChangesAsync(cancellationToken);
+        return Ok(new { id });
+    }
 }

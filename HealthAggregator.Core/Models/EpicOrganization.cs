@@ -4,6 +4,4 @@ public sealed record EpicOrganization(
     string Id,
     string Name,
     string FhirBaseUrl,
-    string AuthorizationEndpoint,
-    string TokenEndpoint,
     bool IsSandbox);
