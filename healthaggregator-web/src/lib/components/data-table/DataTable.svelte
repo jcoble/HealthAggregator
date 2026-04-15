@@ -4,7 +4,7 @@
 	import { ChevronUp, ChevronDown } from '@lucide/svelte';
 	import type { Column, DataTableProps } from './types';
 
-	let { columns, data, pageSize = 50, loading = false, empty }: DataTableProps<T> = $props();
+	let { columns, data, row, pageSize = 50, loading = false, empty }: DataTableProps<T> = $props();
 
 	let sortId = $state<string | null>(null);
 	let sortDir = $state<'asc' | 'desc'>('desc');
@@ -81,13 +81,9 @@
 				</Table.Row>
 			</Table.Header>
 			<Table.Body>
-				{#each rows as row, i (i)}
+				{#each rows as item, i (i)}
 					<Table.Row>
-						{#each columns as col (col.id)}
-							<Table.Cell class={cn(col.hideOn && HIDE_CLASS[col.hideOn])}>
-								{@render col.cell(row)}
-							</Table.Cell>
-						{/each}
+						{@render row(item)}
 					</Table.Row>
 				{/each}
 			</Table.Body>
