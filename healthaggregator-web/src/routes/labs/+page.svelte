@@ -3,5 +3,5 @@
 	import EmptyState from '$lib/components/EmptyState.svelte';
 </script>
 
-<PageHeader title="Overview" subtitle="Coming up in this foundation pass" />
+<PageHeader title="ulabs" subtitle="Coming up in this foundation pass" />
 <EmptyState title="Page under construction" description="This page's implementation lands in the next Phase 4 task." />
