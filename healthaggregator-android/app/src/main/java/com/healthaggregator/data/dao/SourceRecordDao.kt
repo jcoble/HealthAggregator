@@ -31,4 +31,7 @@ interface SourceRecordDao {
 
 	@Query("DELETE FROM source_records")
 	suspend fun deleteAll()
+
+	@Query("SELECT rawJson FROM source_records WHERE sourceSystem = :source AND fhirReference = :ref LIMIT 1")
+	suspend fun findRawJson(source: String, ref: String): String?
 }

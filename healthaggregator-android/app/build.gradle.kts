@@ -18,6 +18,7 @@ android {
 		targetSdk = 36
 		versionCode = 1
 		versionName = "0.1.0"
+		testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 		ksp {
 			arg("room.schemaLocation", "$projectDir/schemas")
 		}
@@ -44,6 +45,10 @@ android {
 
 	buildFeatures {
 		compose = true
+	}
+
+	sourceSets {
+		getByName("androidTest").assets.srcDir("$projectDir/schemas")
 	}
 
 	testOptions {
@@ -106,6 +111,11 @@ dependencies {
 	testImplementation("androidx.test:core-ktx:1.6.1")
 	testImplementation("androidx.test.ext:junit-ktx:1.2.1")
 	testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
+
+	// Instrumented migration tests
+	androidTestImplementation("androidx.room:room-testing:2.6.1")
+	androidTestImplementation("androidx.test.ext:junit:1.2.1")
+	androidTestImplementation("androidx.test:runner:1.6.2")
 }
 
 tasks.withType<Test> {

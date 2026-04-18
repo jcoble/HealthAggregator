@@ -1,17 +1,21 @@
 package com.healthaggregator.ui.navigation
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.navigation.NavHostController
 import androidx.navigation.NavType
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.healthaggregator.ui.home.HomeScreen
+import com.healthaggregator.ui.records.LabDetailScreen
+import com.healthaggregator.ui.records.PanelDetailScreen
+import com.healthaggregator.ui.records.RecordDetailScreen
+import com.healthaggregator.ui.records.RecordsScreen
+import com.healthaggregator.ui.settings.SettingsScreen
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
+
+private fun encode(s: String): String = URLEncoder.encode(s, StandardCharsets.UTF_8.name())
 
 @Composable
 fun AppNavHost(navController: NavHostController, onRequestPermissions: () -> Unit) {
@@ -21,9 +25,7 @@ fun AppNavHost(navController: NavHostController, onRequestPermissions: () -> Uni
 	) {
 		composable(TopLevelRoute.HOME.route) {
 			HomeScreen(
-				onNavigateToRecords = { type ->
-					navController.navigate("${TopLevelRoute.RECORDS.route}?type=$type")
-				},
+				onNavigateToRecords = { type -> navController.navigate("${TopLevelRoute.RECORDS.route}?type=$type") },
 				onRequestPermissions = onRequestPermissions,
 			)
 		}
@@ -31,21 +33,47 @@ fun AppNavHost(navController: NavHostController, onRequestPermissions: () -> Uni
 			route = "${TopLevelRoute.RECORDS.route}?type={type}",
 			arguments = listOf(navArgument("type") { type = NavType.StringType; nullable = true; defaultValue = null }),
 		) {
-			// Nav arg 'type' is read by RecordsViewModel via SavedStateHandle automatically
-			com.healthaggregator.ui.records.RecordsScreen()
+			RecordsScreen(
+				onOpenPanel = { sr -> navController.navigate("panel/${encode(sr)}") },
+				onOpenLab = { source, fhirRef ->
+					navController.navigate("lab/${encode(source)}/${encode(fhirRef)}")
+				},
+				onOpenRecord = { source, fhirRef ->
+					navController.navigate("record/${encode(source)}/${encode(fhirRef)}")
+				},
+			)
 		}
 		composable(TopLevelRoute.SETTINGS.route) {
-			com.healthaggregator.ui.settings.SettingsScreen(onRequestPermissions = onRequestPermissions)
+			SettingsScreen(onRequestPermissions = onRequestPermissions)
 		}
-	}
-}
-
-@Composable
-private fun PlaceholderScreen(title: String) {
-	Box(
-		modifier = Modifier.fillMaxSize(),
-		contentAlignment = Alignment.Center,
-	) {
-		Text(title)
+		composable(
+			route = "lab/{source}/{fhirRef}",
+			arguments = listOf(
+				navArgument("source") { type = NavType.StringType },
+				navArgument("fhirRef") { type = NavType.StringType },
+			),
+		) {
+			LabDetailScreen(onBack = { navController.popBackStack() })
+		}
+		composable(
+			route = "panel/{sr}",
+			arguments = listOf(navArgument("sr") { type = NavType.StringType }),
+		) {
+			PanelDetailScreen(
+				onBack = { navController.popBackStack() },
+				onOpenComponent = { source, fhirRef ->
+					navController.navigate("lab/${encode(source)}/${encode(fhirRef)}")
+				},
+			)
+		}
+		composable(
+			route = "record/{source}/{fhirRef}",
+			arguments = listOf(
+				navArgument("source") { type = NavType.StringType },
+				navArgument("fhirRef") { type = NavType.StringType },
+			),
+		) {
+			RecordDetailScreen(onBack = { navController.popBackStack() })
+		}
 	}
 }

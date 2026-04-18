@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import com.healthaggregator.data.LabPanelAggregate
 import com.healthaggregator.data.entities.LabObservation
 import kotlinx.coroutines.flow.Flow
 
@@ -31,4 +32,24 @@ interface LabDao {
 
 	@Query("DELETE FROM lab_observations")
 	suspend fun deleteAll()
+
+	@Query("SELECT * FROM lab_observations WHERE loincCode = :loinc ORDER BY effectiveAt DESC")
+	fun observeByLoinc(loinc: String): Flow<List<LabObservation>>
+
+	@Query("SELECT * FROM lab_observations WHERE serviceRequestReference = :sr ORDER BY effectiveAt DESC")
+	fun observeByServiceRequest(sr: String): Flow<List<LabObservation>>
+
+	@Query("""
+		SELECT serviceRequestReference AS serviceRequestReference,
+		       COALESCE(serviceRequestDisplay, testName) AS displayName,
+		       MIN(effectiveAt) AS effectiveAt,
+		       sourceSystem AS sourceSystem,
+		       sourceName AS sourceName,
+		       COUNT(*) AS componentCount
+		FROM lab_observations
+		WHERE serviceRequestReference IS NOT NULL
+		GROUP BY serviceRequestReference
+		ORDER BY MIN(effectiveAt) DESC
+	""")
+	fun observePanels(): Flow<List<LabPanelAggregate>>
 }

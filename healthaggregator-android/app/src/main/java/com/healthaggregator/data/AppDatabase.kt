@@ -32,7 +32,7 @@ import com.healthaggregator.data.entities.*
 		SyncJob::class,
 		MedicalDataSource::class,
 	],
-	version = 1,
+	version = 2,
 	exportSchema = true,
 )
 @TypeConverters(Converters::class)

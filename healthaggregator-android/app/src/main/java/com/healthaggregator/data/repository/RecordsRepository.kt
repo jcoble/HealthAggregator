@@ -1,5 +1,6 @@
 package com.healthaggregator.data.repository
 
+import com.healthaggregator.data.LabPanelAggregate
 import com.healthaggregator.data.dao.AllergyDao
 import com.healthaggregator.data.dao.ConditionDao
 import com.healthaggregator.data.dao.DocumentDao
@@ -7,6 +8,7 @@ import com.healthaggregator.data.dao.EncounterDao
 import com.healthaggregator.data.dao.LabDao
 import com.healthaggregator.data.dao.MedicalDataSourceDao
 import com.healthaggregator.data.dao.MedicationDao
+import com.healthaggregator.data.dao.SourceRecordDao
 import com.healthaggregator.data.dao.SyncJobDao
 import com.healthaggregator.data.dao.VitalsDao
 import com.healthaggregator.data.entities.AllergyRecord
@@ -33,6 +35,7 @@ class RecordsRepository @Inject constructor(
 	private val documents: DocumentDao,
 	private val sources: MedicalDataSourceDao,
 	private val syncJobs: SyncJobDao,
+	private val sourceRecords: SourceRecordDao,
 ) {
 	fun observeLabs(): Flow<List<LabObservation>> = labs.observeAll()
 	fun observeVitals(): Flow<List<VitalsObservation>> = vitals.observeAll()
@@ -52,4 +55,9 @@ class RecordsRepository @Inject constructor(
 	fun countDocuments(): Flow<Int> = documents.countAll()
 
 	fun observeLatestSync(): Flow<SyncJob?> = syncJobs.observeLatest()
+
+	fun observePanels(): Flow<List<LabPanelAggregate>> = labs.observePanels()
+	fun observeLabsByServiceRequest(sr: String): Flow<List<LabObservation>> = labs.observeByServiceRequest(sr)
+	fun observeLabsByLoinc(loinc: String): Flow<List<LabObservation>> = labs.observeByLoinc(loinc)
+	suspend fun findRawJson(source: String, fhirReference: String): String? = sourceRecords.findRawJson(source, fhirReference)
 }

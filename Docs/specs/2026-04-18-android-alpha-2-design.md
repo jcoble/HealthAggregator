@@ -1,0 +1,281 @@
+# Android Stream α.2 — Labs Depth + Universal Detail Pages Design
+
+**Date:** 2026-04-18
+**Branch:** `feat/alpha-2-labs-depth`
+**Builds on:** α.1 (`healthaggregator-android/` walking skeleton, merged to main)
+
+## Goal
+
+Turn the Records tab from a flat list into a MyChart-shaped browseable experience: labs grouped by panel, tap-through drill-in, trend sparklines on individual lab values, universal detail pages for every record type, search and sort.
+
+## Non-goals
+
+- **Export to CSV** — deferred to α.3. No value until detail pages land.
+- **Panel name normalization** (`"Comprehensive Metabolic Panel"` vs `"COMPREHENSIVE METABOLIC PANEL"` shown as-is, one panel row per tenant spelling). Deferred.
+- **Self-tracking** (BP, glucose, symptoms entry) — that's stream β.
+- **LLM assistant** — stream γ.
+- **MedicationRequest drill-in** — HC's PHR layer only exposes bare `Medication`. No prescription workflow visible.
+
+## Data findings (inform the design)
+
+Verified on-device with 2,381 FHIR Observations from Cleveland Clinic + Summa Health via CommonHealth/Health Connect (2026-04-18):
+
+1. **Every lab Observation has `basedOn[0]`** — 500-sample showed zero orphans. `basedOn[0].reference` is a stable `ServiceRequest/<id>` string; `basedOn[0].display` is the human-readable panel name (`"URINALYSIS WITH MICROSCOPIC"`, `"Comprehensive Metabolic Panel"`, etc.). This is the panel grouping key — no `DiagnosticReport` needed.
+
+2. **Panel display names vary by tenant.** Same logical panel may appear as `"CBC W/ AUTO DIFFERENTIAL"` (28 rows) / `"Complete Blood Count and Differential"` (23) / `"CBC + AUTO DIFF"` (23). α.2 treats each variant as its own panel row; normalization is a later stream's problem.
+
+3. **Panel orders vs panel types.** Same panel display can appear under multiple `ServiceRequest` references — each `ServiceRequest` is a separate order (different date). 500-sample: `"Comprehensive Metabolic Panel"` appeared 48 times across 3 unique ServiceRequests (3 orders × ~16 components each).
+
+4. **Vital-signs filtered out of panel grouping.** `category.coding.code = "vital-signs"` Observations land in the Vitals tab unchanged; only `"laboratory"` category Observations group by panel.
+
+## Architecture
+
+### Records > Labs — panel-row list
+
+The Labs filter shows **one row per `ServiceRequest` reference**, not per individual measurement. Each row:
+
+- Panel name (`basedOn[0].display`)
+- Effective date of earliest component
+- Source badge (cleveland-clinic / summa-health / etc.)
+- Abnormal pill if ANY component is abnormal (per `AbnormalLabPredicate` from α.1, unchanged)
+- Component count ("14 results" trailing text)
+
+Tap → Panel Detail. Long-press → reserved for α.3 (export/copy actions).
+
+### Panel Detail screen
+
+- Header: panel name, date, source, provider (if available via `basedOn[0].display` or a future ServiceRequest lookup — currently only display name).
+- Body: `LazyColumn` of component labs. Each component row:
+  - Test name (`Observation.code.text` or LOINC display)
+  - Big numeric value + unit
+  - Reference range text ("Normal: 4.0–5.6")
+  - Abnormal pill if applicable
+  - Mini-sparkline showing the last ≤12 values for this specific LOINC code (drawn inline at ~80dp × 32dp)
+- Tap a component → Lab Detail.
+
+### Lab Detail screen
+
+- Big headline: value + unit, with abnormal pill.
+- Full trend chart (Compose `Canvas`): time-series of all past values for this LOINC code. Reference range bands shaded behind line. X-axis: dates. Y-axis: values. ≤ 50 points visible at once (pan/zoom deferred).
+- Metadata card: test name, LOINC code, reference range, status, effective datetime, source, provider, raw FHIR reference.
+- "View raw JSON" expander showing the stored `source_records.rawJson` prettified.
+
+### Generic Record Detail screen (Vitals/Meds/Conditions/Allergies/Encounters/Documents)
+
+- Header: primary title from the entity (same logic as `toRow()` title projection from α.1).
+- Structured fields section: key-value pairs of every non-null entity field.
+- "View raw JSON" expander showing the stored `source_records.rawJson` prettified.
+- No trend chart (meds/conditions aren't numeric over time; vitals get trend treatment in a future stream).
+
+### Search + sort
+
+- Material 3 `SearchBar` pinned above the filter-chip row on each Records filter view.
+- Substring match (case-insensitive) against the row's title text. Visible while searching; clearing restores full list.
+- Sort chip inline with the filter chips: `Newest first ⇅ Oldest first`. Default newest-first.
+- Search query and sort direction both persisted via `SavedStateHandle` so back-stack restoration preserves state.
+
+## Data model changes
+
+### Room migration v1 → v2 (additive)
+
+`LabObservation` gains two nullable columns:
+
+```kotlin
+val serviceRequestReference: String? = null,  // "ServiceRequest/eKAEtWh..."
+val serviceRequestDisplay: String? = null,    // "URINALYSIS WITH MICROSCOPIC"
+```
+
+Migration SQL (auto-generated by Room):
+
+```sql
+ALTER TABLE lab_observations ADD COLUMN serviceRequestReference TEXT;
+ALTER TABLE lab_observations ADD COLUMN serviceRequestDisplay TEXT;
+```
+
+Add a secondary index on `serviceRequestReference` for panel grouping queries:
+
+```kotlin
+Index(value = ["serviceRequestReference"])
+```
+
+Existing DB preserved; `sync` command backfills the two new columns because upsert is `INSERT OR REPLACE` (see α.1 Task 11 finding).
+
+### FhirImportService update
+
+`buildLab()` extracts:
+
+```kotlin
+val basedOnArr = root["basedOn"]?.jsonArray?.firstOrNull()?.jsonObject
+val serviceRequestReference = basedOnArr?.get("reference")?.jsonPrimitive?.contentOrNull
+val serviceRequestDisplay = basedOnArr?.get("display")?.jsonPrimitive?.contentOrNull
+```
+
+Populated in the returned `LabObservation`.
+
+### LabDao additions
+
+```kotlin
+@Query("SELECT * FROM lab_observations WHERE loincCode = :loinc ORDER BY effectiveAt DESC")
+fun observeByLoinc(loinc: String): Flow<List<LabObservation>>
+
+@Query("SELECT * FROM lab_observations WHERE serviceRequestReference = :sr ORDER BY effectiveAt DESC")
+fun observeByServiceRequest(sr: String): Flow<List<LabObservation>>
+
+@Query("""
+    SELECT serviceRequestReference AS serviceRequestReference,
+           COALESCE(serviceRequestDisplay, testName) AS displayName,
+           MIN(effectiveAt) AS effectiveAt,
+           sourceSystem,
+           sourceName,
+           COUNT(*) AS componentCount
+    FROM lab_observations
+    WHERE serviceRequestReference IS NOT NULL
+    GROUP BY serviceRequestReference
+    ORDER BY MIN(effectiveAt) DESC
+""")
+fun observePanels(): Flow<List<LabPanelAggregate>>
+```
+
+New DTO:
+
+```kotlin
+data class LabPanelAggregate(
+    val serviceRequestReference: String,
+    val displayName: String,
+    val effectiveAt: Instant?,
+    val sourceSystem: String,
+    val sourceName: String,
+    val componentCount: Int,
+)
+```
+
+Abnormal-count aggregation is a secondary query (too complex inline) — derived in Kotlin via the per-panel component fetch.
+
+### SourceRecordDao addition
+
+```kotlin
+@Query("SELECT rawJson FROM source_records WHERE sourceSystem = :source AND fhirReference = :ref LIMIT 1")
+suspend fun findRawJson(source: String, ref: String): String?
+```
+
+Used by detail pages to render the "View raw JSON" expander.
+
+## File structure
+
+### New production files
+
+```
+ui/records/LabPanelRow.kt                    + @Preview
+ui/records/PanelDetailScreen.kt              + @Preview
+ui/records/PanelDetailViewModel.kt
+ui/records/LabDetailScreen.kt                + @Preview
+ui/records/LabDetailViewModel.kt
+ui/records/RecordDetailScreen.kt             + @Preview  (generic non-lab detail)
+ui/records/RecordDetailViewModel.kt
+ui/components/Sparkline.kt                   + @Preview
+ui/components/TrendChart.kt                  + @Preview  (full-size version)
+ui/components/SearchBar.kt                   + @Preview
+ui/components/SortChip.kt                    + @Preview
+data/LabPanelAggregate.kt                    (DTO)
+```
+
+### Modified files
+
+```
+data/entities/LabObservation.kt              add 2 fields + index
+data/AppDatabase.kt                          version = 2 + migration
+data/dao/LabDao.kt                           3 new queries
+data/dao/SourceRecordDao.kt                  findRawJson
+data/repository/RecordsRepository.kt         observePanels, observeByLoinc, observeByServiceRequest, findRawJson
+sync/FhirImportService.kt                    buildLab reads basedOn
+ui/records/RecordsViewModel.kt               LABS filter → panel aggregates; search + sort state; other filters unchanged
+ui/records/RecordsScreen.kt                  SearchBar + SortChip, LabPanelRow for LABS, RecordRow tap handlers for detail nav
+ui/navigation/AppNav.kt                      3 new detail routes
+app/schemas/.../2.json                       Room-generated migration schema
+```
+
+### Tests
+
+```
+data/dao/LabDaoTest.kt                       add observePanels correctness test
+sync/FhirImportServiceTest.kt                lab-with-basedOn → ServiceRequest fields populate
+ui/records/PanelDetailViewModelTest.kt       Turbine — abnormal aggregation
+ui/records/LabDetailViewModelTest.kt         Turbine — trend loading
+ui/components/SparklineTest.kt               pure-Kotlin path-drawing helpers
+```
+
+## Testing approach
+
+- **Data model + DAOs**: in-memory Room + JUnit 4 AndroidJUnit4 (α.1 precedent, `@Config(sdk = [35])` continues).
+- **FhirImportService**: extend `TestFhirFixtures` with a `LAB_BMP_BASEDON` sample; verify `buildLab` populates both new fields.
+- **ViewModels**: Turbine assertions on flow transitions (filter → panels, search debounce, sort toggle).
+- **Sparkline geometry**: pure-Kotlin tests of the Path-building helper — given value list + range, assert the produced list of Offsets.
+- **Migration**: Room's `MigrationTestHelper` validates v1 → v2 upgrade on a seeded v1 DB. Run in an instrumented-flavor test OR a JUnit 4 test with Robolectric; precedent from α.1 Task 11 says JUnit 4 + Robolectric path works.
+- **No instrumented UI tests** in α.2 — device smoke covers UX.
+
+## Phases
+
+### Phase 1 — data + import
+
+1. Add `serviceRequestReference` + `serviceRequestDisplay` to `LabObservation` + index
+2. Bump `AppDatabase.version` to 2 + write migration + regenerate schema
+3. Extend `FhirImportService.buildLab()` to populate both fields + test fixture
+4. New DAO queries: `observeByLoinc`, `observeByServiceRequest`, `observePanels`, `findRawJson`
+5. Extend `RecordsRepository` with the same
+
+Gate: migration test green, FhirImportServiceTest passes new assertion, re-sync backfills old DB rows.
+
+### Phase 2 — sparkline + trend chart primitives
+
+1. `Sparkline.kt` — Canvas path drawer, reference-range band shading
+2. `TrendChart.kt` — same math, larger variant with axes
+3. Pure-Kotlin tests for the path-builder helper
+4. @Preview coverage: normal, abnormal, sparse, out-of-range
+
+Gate: Previews render; unit tests green.
+
+### Phase 3 — detail screens
+
+1. `LabDetailScreen` + ViewModel (trend chart, metadata, raw JSON)
+2. `PanelDetailScreen` + ViewModel (component list, mini-sparklines, abnormal aggregation)
+3. `RecordDetailScreen` + ViewModel (generic fields + raw JSON for non-labs)
+4. `AppNav` routes: `lab/{source}/{fhirRef}`, `panel/{source}/{sr}`, `record/{source}/{fhirRef}`
+
+Gate: all three detail screens render Previews; ViewModel tests green.
+
+### Phase 4 — browse refactor
+
+1. `RecordsViewModel` — LABS filter flatMapLatest to `observePanels()`; other filters unchanged
+2. New `LabPanelRow.kt` composable
+3. `SearchBar` + `SortChip` components + ViewModel state
+4. `RecordsScreen` wires everything: SearchBar pinned, SortChip in filter row, per-filter row-type selection, tap handlers navigate to detail
+
+Gate: filter chips still work, search filters, sort reverses, lab panel rows navigate to panel detail.
+
+### Phase 5 — ship gate
+
+Device smoke: browse labs as panels, drill in, trend chart on a lab with history, search works, sort reverses, JSON expanders show raw FHIR, existing α.1 flows unbroken (home counts, settings, sync).
+
+## Open questions
+
+- **Sparse trend data**: what if a LOINC code has only 1 historical value? Show single-point chart with "First recorded" label. No crash.
+- **Cross-source trends**: an HbA1c from Cleveland Clinic + an HbA1c from Summa Health with matching LOINC — do we merge into one trend line, or keep per-source? **Decision: merge.** Different sources can still show via point-color on the chart. Deferred UX refinement; α.2 just merges.
+- **Search scope**: title only, not free-text over metadata. Matches MyChart's behavior. Deferred: full-text search over raw JSON.
+- **Sort state persistence**: via `SavedStateHandle` (per-nav-entry). Not via DataStore — preference resets on nav graph reset. Acceptable for α.2.
+
+## Risk / mitigations
+
+- **Migration on existing DB.** Additive nullable columns + backfill-on-next-sync is safe. Worst case: user can hit Settings → Reset Database from α.1.
+- **Panel grouping for tenants without `basedOn`.** Our data showed zero orphans, but defensively: Observations with `basedOn IS NULL` render as standalone rows in the Labs list with `componentCount = 1` and their own `testName` as panel title.
+- **Compose Canvas performance on large trend lists.** Cap at 50 points rendered; older points collapsed into an averaged tail segment. Not implemented unless profiling shows jank.
+
+## Success criteria (α.2 shipped)
+
+1. Records > Labs shows panel-row list (one row per ServiceRequest order), matches MyChart mental model.
+2. Tap panel → list of components, each with value + reference range + mini-sparkline.
+3. Tap lab component → full trend chart + raw JSON expander.
+4. Tap any non-lab record → generic detail showing all fields + raw JSON.
+5. Search box filters the current list in real time.
+6. Sort-direction toggle reverses current list.
+7. Re-sync against already-migrated DB fills `serviceRequestReference` without losing data.
+8. Existing α.1 flows still work (home dashboard counts, settings reset, sync orchestration).

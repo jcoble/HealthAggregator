@@ -50,4 +50,19 @@ object TestFhirFixtures {
           "description": {"text": "Exercise more"}
         }
     """
+
+	const val LAB_BMP_GLUCOSE = """
+        {
+          "resourceType": "Observation",
+          "id": "glucose-1",
+          "status": "final",
+          "category": [{"coding": [{"system": "http://terminology.hl7.org/CodeSystem/observation-category", "code": "laboratory"}]}],
+          "code": {"coding": [{"system": "http://loinc.org", "code": "2345-7", "display": "Glucose"}], "text": "Glucose"},
+          "subject": {"reference": "Patient/p1"},
+          "effectiveDateTime": "2024-03-15T09:30:00Z",
+          "valueQuantity": {"value": 95, "unit": "mg/dL"},
+          "referenceRange": [{"low": {"value": 70.0}, "high": {"value": 99.0}}],
+          "basedOn": [{"reference": "ServiceRequest/bmp-order-1", "display": "Basic Metabolic Panel"}]
+        }
+    """
 }
