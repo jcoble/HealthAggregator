@@ -1,6 +1,7 @@
 package com.healthaggregator.ui.navigation
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Chat
 import androidx.compose.material.icons.outlined.Dashboard
 import androidx.compose.material.icons.outlined.FolderShared
 import androidx.compose.material.icons.outlined.Settings
@@ -19,6 +20,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 enum class TopLevelRoute(val route: String, val label: String, val icon: ImageVector) {
 	HOME("home", "Home", Icons.Outlined.Dashboard),
 	RECORDS("records", "Records", Icons.Outlined.FolderShared),
+	ASSISTANT("assistant", "Assistant", Icons.Outlined.Chat),
 	SETTINGS("settings", "Settings", Icons.Outlined.Settings),
 }
 
