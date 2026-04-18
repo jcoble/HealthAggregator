@@ -6,6 +6,7 @@ import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -91,5 +92,62 @@ class AppDatabaseMigrationTest {
 		idxCursor.close()
 		assertEquals(true, indexNames.contains("index_lab_observations_canonicalPanelName"))
 		assertEquals(true, indexNames.contains("index_lab_observations_canonicalTestName"))
+	}
+
+	@Test
+	fun migrate_3_to_4() {
+		// Create v3 DB with a lab row to prove existing data isn't lost.
+		helper.createDatabase(dbName, 3).apply {
+			execSQL(
+				"""
+				INSERT INTO lab_observations
+				(sourceSystem, sourceName, fhirReference, resourceId, testName, status, importedAt)
+				VALUES ('cleveland-clinic', 'Cleveland Clinic', 'Observation/abc', 'abc', 'Hemoglobin A1c', '', 1700000000000)
+				""".trimIndent()
+			)
+			close()
+		}
+
+		val db = helper.runMigrationsAndValidate(dbName, 4, true, MIGRATION_3_4)
+
+		// Existing row survived
+		db.query("SELECT COUNT(*) FROM lab_observations").use { c ->
+			c.moveToFirst(); assertEquals(1, c.getInt(0))
+		}
+
+		// New tables exist and are empty
+		db.query("SELECT COUNT(*) FROM chat_conversations").use { c ->
+			c.moveToFirst(); assertEquals(0, c.getInt(0))
+		}
+		db.query("SELECT COUNT(*) FROM chat_messages").use { c ->
+			c.moveToFirst(); assertEquals(0, c.getInt(0))
+		}
+
+		// Insert + FK cascade smoke
+		db.execSQL(
+			"""
+			INSERT INTO chat_conversations (id, title, createdAt, updatedAt, modelId)
+			VALUES ('c1', 'Test', 1700000000000, 1700000000000, 'gpt-5')
+			""".trimIndent()
+		)
+		db.execSQL(
+			"""
+			INSERT INTO chat_messages (id, conversationId, role, content, createdAt)
+			VALUES ('m1', 'c1', 'user', 'hi', 1700000000000)
+			""".trimIndent()
+		)
+
+		db.query("SELECT COUNT(*) FROM chat_messages").use { c ->
+			c.moveToFirst(); assertEquals(1, c.getInt(0))
+		}
+
+		// Index check
+		db.query(
+			"SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='chat_messages'"
+		).use { c ->
+			val names = mutableListOf<String>()
+			while (c.moveToNext()) names.add(c.getString(0))
+			assertTrue(names.any { it == "index_chat_messages_conversationId_createdAt" })
+		}
 	}
 }
