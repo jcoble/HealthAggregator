@@ -17,9 +17,16 @@ public sealed class EpicIntegrationsController(
     [HttpGet("organizations")]
     public IActionResult GetOrganizations()
     {
+        var s = settings.Value;
         return Ok(new
         {
-            configured = !string.IsNullOrWhiteSpace(settings.Value.ClientId),
+            configured = s.AnyClientIdConfigured,
+            clientIds = new
+            {
+                legacy = !string.IsNullOrWhiteSpace(s.ClientId),
+                nonProduction = !string.IsNullOrWhiteSpace(s.NonProductionClientId),
+                production = !string.IsNullOrWhiteSpace(s.ProductionClientId)
+            },
             organizations = epicClient.GetOrganizations()
         });
     }

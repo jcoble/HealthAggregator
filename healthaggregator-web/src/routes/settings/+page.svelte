@@ -30,20 +30,44 @@
 				<Card.Description>SMART on FHIR client status and configured organizations</Card.Description>
 			</Card.Header>
 			<Card.Content class="space-y-4">
-				<div class="flex items-center gap-2">
-					<span class="text-[var(--muted-foreground)]">Client ID:</span>
-					{#if data.orgs.configured}
-						<Badge variant="success" data-testid="settings-epic-client-set">Set</Badge>
-					{:else}
-						<Badge variant="warning" data-testid="settings-epic-client-unset">Not set</Badge>
-					{/if}
+				<div>
+					<div class="text-sm text-[var(--muted-foreground)] mb-2">Client IDs by environment:</div>
+					<ul class="space-y-1.5 text-sm" data-testid="settings-epic-client-ids">
+						<li class="flex items-center gap-2">
+							<span class="w-48 text-[var(--muted-foreground)]">NonProductionClientId</span>
+							{#if data.orgs.clientIds.nonProduction}
+								<Badge variant="success" data-testid="settings-clientid-nonprod-set">Set</Badge>
+							{:else}
+								<Badge variant="warning" data-testid="settings-clientid-nonprod-unset">Not set</Badge>
+							{/if}
+							<span class="text-xs text-[var(--muted-foreground)]">Epic sandbox + customer non-prod</span>
+						</li>
+						<li class="flex items-center gap-2">
+							<span class="w-48 text-[var(--muted-foreground)]">ProductionClientId</span>
+							{#if data.orgs.clientIds.production}
+								<Badge variant="success" data-testid="settings-clientid-prod-set">Set</Badge>
+							{:else}
+								<Badge variant="warning" data-testid="settings-clientid-prod-unset">Not set</Badge>
+							{/if}
+							<span class="text-xs text-[var(--muted-foreground)]">Customer production envs</span>
+						</li>
+						<li class="flex items-center gap-2">
+							<span class="w-48 text-[var(--muted-foreground)]">ClientId (legacy fallback)</span>
+							{#if data.orgs.clientIds.legacy}
+								<Badge variant="secondary" data-testid="settings-clientid-legacy-set">Set</Badge>
+							{:else}
+								<Badge variant="outline" data-testid="settings-clientid-legacy-unset">Not set</Badge>
+							{/if}
+							<span class="text-xs text-[var(--muted-foreground)]">Used when env-specific id is missing</span>
+						</li>
+					</ul>
 				</div>
-				{#if !data.orgs.configured}
-					<p class="text-sm text-[var(--muted-foreground)]">
-						Set it via user-secrets:
-						<code class="bg-[var(--muted)] px-1.5 py-0.5 rounded text-xs">dotnet user-secrets set "Epic:ClientId" "&lt;id&gt;" --project HealthAggregator.Api</code>
-					</p>
-				{/if}
+				<div class="text-sm text-[var(--muted-foreground)] space-y-1">
+					<div>Set via user-secrets — each is independent:</div>
+					<pre class="bg-[var(--muted)] px-2 py-2 rounded text-xs overflow-x-auto"><code>dotnet user-secrets set "Epic:NonProductionClientId" "&lt;non-prod-id&gt;" --project HealthAggregator.Api
+dotnet user-secrets set "Epic:ProductionClientId"    "&lt;prod-id&gt;"     --project HealthAggregator.Api
+dotnet user-secrets set "Epic:ClientId"              "&lt;fallback-id&gt;" --project HealthAggregator.Api</code></pre>
+				</div>
 				<div>
 					<div class="text-sm text-[var(--muted-foreground)] mb-2">Configured organizations:</div>
 					<ul class="space-y-2">

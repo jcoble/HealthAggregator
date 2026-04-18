@@ -11,6 +11,11 @@ export type EpicOrganization = {
 
 export type EpicOrganizationsResponse = {
 	configured: boolean;
+	clientIds: {
+		legacy: boolean;
+		nonProduction: boolean;
+		production: boolean;
+	};
 	organizations: EpicOrganization[];
 };
 

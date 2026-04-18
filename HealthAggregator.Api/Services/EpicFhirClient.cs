@@ -42,9 +42,13 @@ public sealed class EpicFhirClient(
     public async Task<EpicConnectResult> BuildConnectUrlAsync(string organizationId, string requestScheme, string requestHost, CancellationToken cancellationToken)
     {
         var organization = FindOrganization(organizationId);
-        if (string.IsNullOrWhiteSpace(_settings.ClientId))
+        var clientId = _settings.ResolveClientIdFor(organization);
+        if (string.IsNullOrWhiteSpace(clientId))
         {
-            return EpicConnectResult.MissingClientId(organization);
+            var envKey = organization.IsSandbox ? "Epic:NonProductionClientId" : "Epic:ProductionClientId";
+            return EpicConnectResult.MissingClientId(
+                organization,
+                $"Set {envKey} (or Epic:ClientId as a fallback) before connecting to {organization.Name}.");
         }
 
         if (string.IsNullOrWhiteSpace(organization.FhirBaseUrl))
@@ -84,7 +88,7 @@ public sealed class EpicFhirClient(
         var query = new Dictionary<string, string?>
         {
             ["response_type"] = "code",
-            ["client_id"] = _settings.ClientId,
+            ["client_id"] = clientId,
             ["redirect_uri"] = redirectUri,
             ["scope"] = string.Join(' ', PatientScopes),
             ["state"] = state,
@@ -107,13 +111,15 @@ public sealed class EpicFhirClient(
         }
 
         var organization = FindOrganization(authState.OrganizationId);
+        var clientId = _settings.ResolveClientIdFor(organization)
+            ?? throw new InvalidOperationException($"No client_id configured for {organization.Name}.");
         var discovered = await smartConfig.ResolveAsync(organization.FhirBaseUrl, cancellationToken);
         using var response = await httpClient.PostAsync(discovered.TokenEndpoint, new FormUrlEncodedContent(new Dictionary<string, string>
         {
             ["grant_type"] = "authorization_code",
             ["code"] = code,
             ["redirect_uri"] = authState.RedirectUri,
-            ["client_id"] = _settings.ClientId,
+            ["client_id"] = clientId,
             ["code_verifier"] = authState.CodeVerifier
         }), cancellationToken);
 
@@ -258,8 +264,10 @@ public sealed record EpicConnectResult(EpicOrganization Organization, string? Au
     public static EpicConnectResult Ready(EpicOrganization organization, string authorizationUrl) =>
         new(organization, authorizationUrl, null);
 
-    public static EpicConnectResult MissingClientId(EpicOrganization organization) =>
-        new(organization, null, "Set Epic:ClientId before starting the SMART on FHIR authorization flow.");
+    public static EpicConnectResult MissingClientId(
+        EpicOrganization organization,
+        string? message = null) =>
+        new(organization, null, message ?? "Set Epic:ClientId before starting the SMART on FHIR authorization flow.");
 
     public static EpicConnectResult Failed(EpicOrganization organization, string error) =>
         new(organization, null, error);
