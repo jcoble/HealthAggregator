@@ -23,6 +23,7 @@ import java.time.Instant
 class SyncRepositoryTest {
 	private lateinit var db: AppDatabase
 	private lateinit var fakeClient: FakeSyncClient
+	private lateinit var migrationLoader: MigrationLoader
 	private lateinit var repo: SyncRepository
 
 	@Before
@@ -30,10 +31,13 @@ class SyncRepositoryTest {
 		val ctx: Context = ApplicationProvider.getApplicationContext()
 		db = Room.inMemoryDatabaseBuilder(ctx, AppDatabase::class.java).allowMainThreadQueries().build()
 		fakeClient = FakeSyncClient()
+		migrationLoader = MigrationLoader(ctx)
 		repo = SyncRepository(
 			client = fakeClient,
 			db = db,
 			serializer = RowSerializer(),
+			migrationLoader = migrationLoader,
+			phoneSchemaVersion = 5,
 			isPairedProvider = { true },
 		)
 	}
@@ -62,11 +66,25 @@ class SyncRepositoryTest {
 	}
 
 	@Test
+	fun `syncNow applies migrations when daemon schema is behind`() = runBlocking {
+		fakeClient.versionResponse = VersionResponse(schema_version = 3, daemon_version = "0.1.0")
+		val result = repo.syncNow().getOrThrow()
+		assertEquals(listOf(3 to 4, 4 to 5), result.migrationsApplied)
+		assertEquals(2, fakeClient.migrateCalls.size)
+		assertEquals(3, fakeClient.migrateCalls[0].from_version)
+		assertEquals(4, fakeClient.migrateCalls[0].to_version)
+		assertEquals(4, fakeClient.migrateCalls[1].from_version)
+		assertEquals(5, fakeClient.migrateCalls[1].to_version)
+	}
+
+	@Test
 	fun `syncNow returns failure when not paired`() = runBlocking {
 		val unpairedRepo = SyncRepository(
 			client = fakeClient,
 			db = db,
 			serializer = RowSerializer(),
+			migrationLoader = migrationLoader,
+			phoneSchemaVersion = 5,
 			isPairedProvider = { false },
 		)
 		val result = unpairedRepo.syncNow()
@@ -95,11 +113,18 @@ class SyncRepositoryTest {
 	private class FakeSyncClient : SyncClient(okhttp3.OkHttpClient(), kotlinx.serialization.json.Json { }, { null }) {
 		var pushedBatches = mutableListOf<PushRequest>()
 		var pullResponse = PullResponse(rows_by_table = emptyMap())
+		var versionResponse = VersionResponse(schema_version = 5, daemon_version = "0.1.0")
+		val migrateCalls = mutableListOf<MigrateRequest>()
+		override suspend fun version(): VersionResponse = versionResponse
 		override suspend fun push(payload: PushRequest): PushResponse {
 			pushedBatches.add(payload)
 			val counts = payload.rows_by_table.mapValues { it.value.size }
 			return PushResponse(inserted_by_table = counts, ignored_by_table = counts.mapValues { 0 })
 		}
 		override suspend fun pull(): PullResponse = pullResponse
+		override suspend fun migrate(payload: MigrateRequest): MigrateResponse {
+			migrateCalls.add(payload)
+			return MigrateResponse(applied = listOf(AppliedMigration(payload.from_version, payload.to_version)))
+		}
 	}
 }

@@ -40,6 +40,9 @@ open class SyncClient @Inject constructor(
 
 	open suspend fun pull(): PullResponse = get("/sync/pull") { PullResponse.serializer() }
 
+	open suspend fun migrate(payload: MigrateRequest): MigrateResponse =
+		post("/sync/migrate", json.encodeToString(payload)) { MigrateResponse.serializer() }
+
 	private suspend fun <T> get(path: String, deserializer: () -> kotlinx.serialization.KSerializer<T>): T = withContext(Dispatchers.IO) {
 		val creds = credentialsProvider() ?: throw SyncError.NotPaired
 		val req = Request.Builder()

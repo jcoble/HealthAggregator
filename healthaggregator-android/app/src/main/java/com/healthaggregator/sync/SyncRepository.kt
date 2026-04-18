@@ -19,15 +19,32 @@ class SyncRepository @Inject constructor(
 	private val client: SyncClient,
 	private val db: AppDatabase,
 	private val serializer: RowSerializer,
+	private val migrationLoader: MigrationLoader,
+	private val phoneSchemaVersion: Int = 5,
 	private val isPairedProvider: () -> Boolean,
 ) {
 	suspend fun syncNow(): Result<SyncResult> = runCatching {
 		if (!isPairedProvider()) throw SyncError.NotPaired
 		val start = System.currentTimeMillis()
 
-		val pushPayload = buildPushPayload()
-		val pushResp = client.push(pushPayload)
+		val version = client.version()
+		val daemonSchema = version.schema_version
+		val migrationsApplied = mutableListOf<Pair<Int, Int>>()
 
+		if (daemonSchema > phoneSchemaVersion) {
+			throw SyncError.DaemonAheadOfPhone(daemonSchema, phoneSchemaVersion)
+		}
+		if (daemonSchema < phoneSchemaVersion) {
+			var current = if (daemonSchema == 0) 1 else daemonSchema
+			while (current < phoneSchemaVersion) {
+				val sql = migrationLoader.load(current, current + 1)
+				client.migrate(MigrateRequest(from_version = current, to_version = current + 1, sql = sql))
+				migrationsApplied.add(current to (current + 1))
+				current++
+			}
+		}
+
+		val pushResp = client.push(buildPushPayload())
 		val pullResp = client.pull()
 		val pulled = mergePull(pullResp)
 
@@ -35,6 +52,7 @@ class SyncRepository @Inject constructor(
 			pushedRowsByTable = pushResp.inserted_by_table,
 			pulledRowsByTable = pulled,
 			ignoredRowsByTable = pushResp.ignored_by_table,
+			migrationsApplied = migrationsApplied,
 			durationMs = System.currentTimeMillis() - start,
 		)
 	}
