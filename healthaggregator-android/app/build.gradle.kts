@@ -2,6 +2,7 @@ plugins {
 	alias(libs.plugins.android.application)
 	alias(libs.plugins.kotlin.android)
 	alias(libs.plugins.kotlin.compose)
+	alias(libs.plugins.kotlin.serialization)
 	alias(libs.plugins.hilt)
 	alias(libs.plugins.ksp)
 }
@@ -73,6 +74,7 @@ dependencies {
 	implementation(libs.health.connect)
 	implementation(libs.okhttp)
 	implementation(libs.kotlinx.coroutines)
+	implementation(libs.kotlinx.serialization.json)
 
 	// Hilt
 	implementation(libs.hilt.android)
