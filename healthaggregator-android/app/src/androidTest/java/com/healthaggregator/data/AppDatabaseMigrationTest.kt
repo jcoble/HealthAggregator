@@ -56,4 +56,40 @@ class AppDatabaseMigrationTest {
 		idxCursor.close()
 		assertEquals(true, indexNames.contains("index_lab_observations_serviceRequestReference"))
 	}
+
+	@Test
+	fun migrate_2_to_3_adds_canonical_columns_and_preserves_rows() {
+		// Seed v2: insert a row with serviceRequestDisplay + testName set, no canonicals yet
+		helper.createDatabase(dbName, 2).use { db ->
+			db.execSQL("""
+				INSERT INTO lab_observations(
+					sourceSystem, sourceName, fhirReference, resourceId, testName, status, importedAt,
+					serviceRequestReference, serviceRequestDisplay
+				) VALUES(
+					'cleveland-clinic', 'Cleveland Clinic', 'Observation/y', 'y', 'GLUCOSE', 'final', 0,
+					'ServiceRequest/bmp-1', 'COMPREHENSIVE METABOLIC PANEL'
+				)
+			""".trimIndent())
+		}
+
+		val db3 = helper.runMigrationsAndValidate(dbName, 3, true, MIGRATION_2_3)
+
+		val cursor = db3.query("SELECT testName, serviceRequestDisplay, canonicalPanelName, canonicalTestName FROM lab_observations")
+		cursor.use {
+			assertEquals(1, it.count)
+			assertEquals(true, it.moveToFirst())
+			assertEquals("GLUCOSE", it.getString(0))
+			assertEquals("COMPREHENSIVE METABOLIC PANEL", it.getString(1))
+			assertEquals(true, it.isNull(2)) // not backfilled by the migration itself
+			assertEquals(true, it.isNull(3))
+		}
+
+		val idxCursor = db3.query("SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='lab_observations'")
+		val indexNames = buildList {
+			while (idxCursor.moveToNext()) add(idxCursor.getString(0))
+		}
+		idxCursor.close()
+		assertEquals(true, indexNames.contains("index_lab_observations_canonicalPanelName"))
+		assertEquals(true, indexNames.contains("index_lab_observations_canonicalTestName"))
+	}
 }

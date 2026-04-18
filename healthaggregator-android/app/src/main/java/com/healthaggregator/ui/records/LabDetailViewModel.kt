@@ -41,12 +41,13 @@ class LabDetailViewModel @Inject constructor(
 		records.observeLabs()
 			.map { labs -> labs.firstOrNull { it.sourceSystem == sourceSystem && it.fhirReference == fhirReference } }
 			.flatMapLatest { current ->
-				if (current?.loincCode == null) {
+				if (current == null || (current.loincCode == null && current.canonicalTestName == null)) {
 					flowOf(LabDetailUiState(loading = false, current = current))
 				} else {
-					records.observeLabsByLoinc(current.loincCode).map { trend ->
-						LabDetailUiState(loading = false, current = current, trend = trend)
-					}
+					records.observeLabsByLoincOrCanonical(current.loincCode, current.canonicalTestName)
+						.map { trend ->
+							LabDetailUiState(loading = false, current = current, trend = trend)
+						}
 				}
 			}
 			.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), LabDetailUiState())

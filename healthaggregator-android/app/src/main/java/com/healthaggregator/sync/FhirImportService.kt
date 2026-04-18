@@ -2,6 +2,7 @@ package com.healthaggregator.sync
 
 import androidx.room.withTransaction
 import com.healthaggregator.data.AppDatabase
+import com.healthaggregator.data.LabNameNormalizer
 import com.healthaggregator.data.entities.*
 import kotlinx.serialization.json.*
 import java.time.Instant
@@ -161,6 +162,8 @@ class FhirImportService @Inject constructor(
 		val basedOn = root["basedOn"]?.jsonArray?.firstOrNull()?.jsonObject
 		val serviceRequestReference = basedOn?.get("reference")?.jsonPrimitive?.contentOrNull
 		val serviceRequestDisplay = basedOn?.get("display")?.jsonPrimitive?.contentOrNull
+		val canonicalPanelName = LabNameNormalizer.normalize(serviceRequestDisplay)
+		val canonicalTestName = LabNameNormalizer.normalize(testName)
 		return LabObservation(
 			sourceSystem = sourceSystem, sourceName = sourceName,
 			fhirReference = fhirRef, resourceId = resourceId,
@@ -176,6 +179,8 @@ class FhirImportService @Inject constructor(
 			importedAt = now,
 			serviceRequestReference = serviceRequestReference,
 			serviceRequestDisplay = serviceRequestDisplay,
+			canonicalPanelName = canonicalPanelName,
+			canonicalTestName = canonicalTestName,
 		)
 	}
 

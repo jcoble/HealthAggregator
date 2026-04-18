@@ -60,21 +60,67 @@ class LabDaoPanelTest {
 		assertEquals("Urinalysis", panels[0].displayName)
 	}
 
+	@Test
+	fun observeByLoincOrCanonical_union_matches_across_orgs() = runTest {
+		// Two orgs' A1c: Cleveland has LOINC but Summa's LOINC differs; canonicalTestName joins them.
+		dao.upsertAll(listOf(
+			lab("cc-1", source = "cleveland-clinic", sourceName = "Cleveland Clinic",
+				loinc = "4548-4", testName = "Hemoglobin A1c", canonicalTest = "Hemoglobin A1c"),
+			lab("summa-1", source = "summa-health", sourceName = "Summa Health",
+				loinc = "17856-6", testName = "HEMOGLOBIN A1C", canonicalTest = "Hemoglobin A1c"),
+			// Not an A1c — must not match
+			lab("other-1", source = "cleveland-clinic", sourceName = "Cleveland Clinic",
+				loinc = "2339-0", testName = "Glucose", canonicalTest = "Glucose"),
+		))
+
+		val results = dao.observeByLoincOrCanonical(loinc = "4548-4", canonical = "Hemoglobin A1c").first()
+		assertEquals(2, results.size)
+		assertEquals(setOf("Observation/cc-1", "Observation/summa-1"), results.map { it.fhirReference }.toSet())
+	}
+
+	@Test
+	fun observeByLoincOrCanonical_handles_null_loinc() = runTest {
+		// Org that skipped LOINC — must still pick up via canonical
+		dao.upsertAll(listOf(
+			lab("no-loinc", source = "home-lab", sourceName = "Home Lab",
+				loinc = null, testName = "HbA1c", canonicalTest = "Hemoglobin A1c"),
+			lab("with-loinc", source = "cleveland-clinic", sourceName = "Cleveland Clinic",
+				loinc = "4548-4", testName = "Hemoglobin A1c", canonicalTest = "Hemoglobin A1c"),
+		))
+
+		val results = dao.observeByLoincOrCanonical(loinc = null, canonical = "Hemoglobin A1c").first()
+		assertEquals(2, results.size)
+	}
+
+	@Test
+	fun observeByLoincOrCanonical_dedupes_when_row_matches_both() = runTest {
+		// A row that matches on BOTH keys should appear once, not twice.
+		dao.upsert(lab("both", loinc = "4548-4", testName = "Hemoglobin A1c", canonicalTest = "Hemoglobin A1c"))
+		val results = dao.observeByLoincOrCanonical(loinc = "4548-4", canonical = "Hemoglobin A1c").first()
+		assertEquals(1, results.size)
+	}
+
 	private fun lab(
 		fhirRef: String,
+		source: String = "cleveland-clinic",
+		sourceName: String = "Cleveland Clinic",
 		sr: String? = null,
 		srDisplay: String? = null,
 		testName: String = "test",
+		loinc: String? = null,
+		canonicalTest: String? = null,
 		date: String? = "2024-03-15T09:30:00Z",
 	) = LabObservation(
-		sourceSystem = "cleveland-clinic",
-		sourceName = "Cleveland Clinic",
+		sourceSystem = source,
+		sourceName = sourceName,
 		fhirReference = "Observation/$fhirRef",
 		resourceId = fhirRef,
 		testName = testName,
+		loincCode = loinc,
 		effectiveAt = date?.let { Instant.parse(it) },
 		importedAt = Instant.parse("2026-04-18T00:00:00Z"),
 		serviceRequestReference = sr,
 		serviceRequestDisplay = srDisplay,
+		canonicalTestName = canonicalTest,
 	)
 }

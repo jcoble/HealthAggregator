@@ -72,6 +72,7 @@ class HomeViewModel @Inject constructor(
 
 	init {
 		viewModelScope.launch { _permission.value = reader.hasAllPermissions() }
+		viewModelScope.launch { records.ensureNamesNormalized() }
 	}
 
 	fun onPermissionsUpdated() {
