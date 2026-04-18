@@ -97,63 +97,53 @@ class SyncRepository @Inject constructor(
 	}
 
 	private suspend fun mergePatients(rows: List<JsonObject>): Int {
-		val entities = rows.map { serializer.fromPatientRow(it) }
-		db.patientDao().upsertAll(entities)
-		return entities.size
+		val entities = rows.map { serializer.fromPatientRow(it).copy(id = 0L) }
+		return db.patientDao().insertAllIgnore(entities).count { it != -1L }
 	}
 
 	private suspend fun mergeLabs(rows: List<JsonObject>): Int {
-		val entities = rows.map { serializer.fromLabRow(it) }
-		db.labDao().upsertAll(entities)
-		return entities.size
+		val entities = rows.map { serializer.fromLabRow(it).copy(id = 0L) }
+		return db.labDao().insertAllIgnore(entities).count { it != -1L }
 	}
 
 	private suspend fun mergeVitals(rows: List<JsonObject>): Int {
-		val entities = rows.map { serializer.fromVitalsRow(it) }
-		db.vitalsDao().upsertAll(entities)
-		return entities.size
+		val entities = rows.map { serializer.fromVitalsRow(it).copy(id = 0L) }
+		return db.vitalsDao().insertAllIgnore(entities).count { it != -1L }
 	}
 
 	private suspend fun mergeConditions(rows: List<JsonObject>): Int {
-		val entities = rows.map { serializer.fromConditionRow(it) }
-		db.conditionDao().upsertAll(entities)
-		return entities.size
+		val entities = rows.map { serializer.fromConditionRow(it).copy(id = 0L) }
+		return db.conditionDao().insertAllIgnore(entities).count { it != -1L }
 	}
 
 	private suspend fun mergeMedications(rows: List<JsonObject>): Int {
-		val entities = rows.map { serializer.fromMedicationRow(it) }
-		db.medicationDao().upsertAll(entities)
-		return entities.size
+		val entities = rows.map { serializer.fromMedicationRow(it).copy(id = 0L) }
+		return db.medicationDao().insertAllIgnore(entities).count { it != -1L }
 	}
 
 	private suspend fun mergeAllergies(rows: List<JsonObject>): Int {
-		val entities = rows.map { serializer.fromAllergyRow(it) }
-		db.allergyDao().upsertAll(entities)
-		return entities.size
+		val entities = rows.map { serializer.fromAllergyRow(it).copy(id = 0L) }
+		return db.allergyDao().insertAllIgnore(entities).count { it != -1L }
 	}
 
 	private suspend fun mergeEncounters(rows: List<JsonObject>): Int {
-		val entities = rows.map { serializer.fromEncounterRow(it) }
-		db.encounterDao().upsertAll(entities)
-		return entities.size
+		val entities = rows.map { serializer.fromEncounterRow(it).copy(id = 0L) }
+		return db.encounterDao().insertAllIgnore(entities).count { it != -1L }
 	}
 
 	private suspend fun mergeDocuments(rows: List<JsonObject>): Int {
-		val entities = rows.map { serializer.fromDocumentRow(it) }
-		db.documentDao().upsertAll(entities)
-		return entities.size
+		val entities = rows.map { serializer.fromDocumentRow(it).copy(id = 0L) }
+		return db.documentDao().insertAllIgnore(entities).count { it != -1L }
 	}
 
 	private suspend fun mergeDiagnosticReports(rows: List<JsonObject>): Int {
-		val entities = rows.map { serializer.fromDiagnosticReportRow(it) }
-		db.diagnosticReportDao().upsertAll(entities)
-		return entities.size
+		val entities = rows.map { serializer.fromDiagnosticReportRow(it).copy(id = 0L) }
+		return db.diagnosticReportDao().insertAllIgnore(entities).count { it != -1L }
 	}
 
 	private suspend fun mergeSourceRecords(rows: List<JsonObject>): Int {
-		val entities = rows.map { serializer.fromSourceRecordRow(it) }
-		db.sourceRecordDao().upsertAll(entities)
-		return entities.size
+		val entities = rows.map { serializer.fromSourceRecordRow(it).copy(id = 0L) }
+		return db.sourceRecordDao().insertAllIgnore(entities).count { it != -1L }
 	}
 
 	private suspend fun mergeChatConversations(rows: List<JsonObject>): Int {
@@ -171,7 +161,6 @@ class SyncRepository @Inject constructor(
 
 	private suspend fun mergeChatMessages(rows: List<JsonObject>): Int {
 		val entities = rows.map { serializer.fromChatMessageRow(it) }
-		db.chatDao().upsertMessages(entities)
-		return entities.size
+		return db.chatDao().insertMessagesIgnore(entities).count { it != -1L }
 	}
 }

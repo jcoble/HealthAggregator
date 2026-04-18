@@ -14,6 +14,9 @@ interface EncounterDao {
 	@Insert(onConflict = OnConflictStrategy.REPLACE)
 	suspend fun upsertAll(items: List<EncounterRecord>)
 
+	@Insert(onConflict = OnConflictStrategy.IGNORE)
+	suspend fun insertAllIgnore(rows: List<EncounterRecord>): List<Long>
+
 	@Insert(onConflict = OnConflictStrategy.REPLACE)
 	suspend fun upsert(item: EncounterRecord)
 

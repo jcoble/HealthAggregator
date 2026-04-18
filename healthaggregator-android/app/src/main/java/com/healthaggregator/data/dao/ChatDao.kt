@@ -20,6 +20,9 @@ interface ChatDao {
 	@Insert(onConflict = OnConflictStrategy.REPLACE)
 	suspend fun upsertMessages(messages: List<ChatMessage>)
 
+	@Insert(onConflict = OnConflictStrategy.IGNORE)
+	suspend fun insertMessagesIgnore(rows: List<ChatMessage>): List<Long>
+
 	@Query("SELECT * FROM chat_conversations ORDER BY updatedAt DESC")
 	fun observeConversations(): Flow<List<ChatConversation>>
 

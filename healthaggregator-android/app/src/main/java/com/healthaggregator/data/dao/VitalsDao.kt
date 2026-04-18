@@ -14,6 +14,9 @@ interface VitalsDao {
 	@Insert(onConflict = OnConflictStrategy.REPLACE)
 	suspend fun upsertAll(vitals: List<VitalsObservation>)
 
+	@Insert(onConflict = OnConflictStrategy.IGNORE)
+	suspend fun insertAllIgnore(rows: List<VitalsObservation>): List<Long>
+
 	@Query("SELECT * FROM vitals_observations ORDER BY effectiveAt DESC, id DESC")
 	fun observeAll(): Flow<List<VitalsObservation>>
 
