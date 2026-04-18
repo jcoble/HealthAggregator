@@ -20,7 +20,7 @@ class SyncRepository @Inject constructor(
 	private val db: AppDatabase,
 	private val serializer: RowSerializer,
 	private val migrationLoader: MigrationLoader,
-	private val phoneSchemaVersion: Int = 5,
+	private val phoneSchemaVersion: Int = 7,
 	private val isPairedProvider: () -> Boolean,
 ) {
 	suspend fun syncNow(): Result<SyncResult> = runCatching {
@@ -62,7 +62,6 @@ class SyncRepository @Inject constructor(
 		rows[SyncableTable.PATIENTS.tableName] = db.patientDao().getAllSnapshot().map { serializer.toRow(it) }
 		rows[SyncableTable.LAB_OBSERVATIONS.tableName] = db.labDao().getAllSnapshot().map { serializer.toRow(it) }
 		rows[SyncableTable.VITALS_OBSERVATIONS.tableName] = db.vitalsDao().getAllSnapshot().map { serializer.toRow(it) }
-		rows[SyncableTable.CONDITIONS.tableName] = db.conditionDao().getAllSnapshot().map { serializer.toRow(it) }
 		rows[SyncableTable.MEDICATIONS.tableName] = db.medicationDao().getAllSnapshot().map { serializer.toRow(it) }
 		rows[SyncableTable.ALLERGIES.tableName] = db.allergyDao().getAllSnapshot().map { serializer.toRow(it) }
 		rows[SyncableTable.ENCOUNTERS.tableName] = db.encounterDao().getAllSnapshot().map { serializer.toRow(it) }
@@ -81,7 +80,6 @@ class SyncRepository @Inject constructor(
 				SyncableTable.PATIENTS.tableName -> mergePatients(rows)
 				SyncableTable.LAB_OBSERVATIONS.tableName -> mergeLabs(rows)
 				SyncableTable.VITALS_OBSERVATIONS.tableName -> mergeVitals(rows)
-				SyncableTable.CONDITIONS.tableName -> mergeConditions(rows)
 				SyncableTable.MEDICATIONS.tableName -> mergeMedications(rows)
 				SyncableTable.ALLERGIES.tableName -> mergeAllergies(rows)
 				SyncableTable.ENCOUNTERS.tableName -> mergeEncounters(rows)
@@ -109,11 +107,6 @@ class SyncRepository @Inject constructor(
 	private suspend fun mergeVitals(rows: List<JsonObject>): Int {
 		val entities = rows.map { serializer.fromVitalsRow(it).copy(id = 0L) }
 		return db.vitalsDao().insertAllIgnore(entities).count { it != -1L }
-	}
-
-	private suspend fun mergeConditions(rows: List<JsonObject>): Int {
-		val entities = rows.map { serializer.fromConditionRow(it).copy(id = 0L) }
-		return db.conditionDao().insertAllIgnore(entities).count { it != -1L }
 	}
 
 	private suspend fun mergeMedications(rows: List<JsonObject>): Int {

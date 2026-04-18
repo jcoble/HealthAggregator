@@ -48,6 +48,7 @@ class AssistantToolsTest {
 			encounters = db.encounterDao(),
 			documents = db.documentDao(),
 			sources = db.medicalDataSourceDao(),
+			sourceSummaries = db.sourceSummaryDao(),
 			syncJobs = db.syncJobDao(),
 			sourceRecords = db.sourceRecordDao(),
 		)

@@ -108,7 +108,6 @@ fun HomeScreen(
 						StatTile("all", Icons.Outlined.Folder, "Labs", state.labs),
 						StatTile("vitals", Icons.Outlined.MonitorHeart, "Vitals", state.vitals),
 						StatTile("medications", Icons.Outlined.LocalPharmacy, "Meds", state.medications),
-						StatTile("conditions", Icons.Outlined.Healing, "Conditions", state.conditions),
 						StatTile("allergies", Icons.Outlined.Biotech, "Allergies", state.allergies),
 						StatTile("encounters", Icons.Outlined.LocalHospital, "Encounters", state.encounters),
 						StatTile("documents", Icons.Outlined.Assignment, "Documents", state.documents),
@@ -222,7 +221,7 @@ private fun PreviewPopulated() = HealthAggregatorTheme {
 			StatTile("all", Icons.Outlined.Folder, "Labs", 47),
 			StatTile("vitals", Icons.Outlined.MonitorHeart, "Vitals", 18),
 			StatTile("medications", Icons.Outlined.LocalPharmacy, "Meds", 6),
-			StatTile("conditions", Icons.Outlined.Healing, "Conditions", 3),
+			StatTile("allergies", Icons.Outlined.Biotech, "Allergies", 1),
 		)
 		Column(
 			modifier = Modifier

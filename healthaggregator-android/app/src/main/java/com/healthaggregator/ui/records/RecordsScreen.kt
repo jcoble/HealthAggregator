@@ -117,7 +117,6 @@ private fun iconFor(kind: FilterType): ImageVector = when (kind) {
 	FilterType.ALL, FilterType.LABS -> Icons.Outlined.Science
 	FilterType.VITALS -> Icons.Outlined.MonitorHeart
 	FilterType.MEDICATIONS -> Icons.Outlined.LocalPharmacy
-	FilterType.CONDITIONS -> Icons.Outlined.Healing
 	FilterType.ALLERGIES -> Icons.Outlined.Biotech
 	FilterType.ENCOUNTERS -> Icons.Outlined.LocalHospital
 	FilterType.DOCUMENTS -> Icons.Outlined.Assignment
@@ -128,7 +127,6 @@ private fun emptyStateFor(filter: FilterType): Triple<ImageVector, String, Strin
 	FilterType.LABS -> Triple(Icons.Outlined.Science, "No lab results", "Labs appear here once CommonHealth pulls them in.")
 	FilterType.VITALS -> Triple(Icons.Outlined.MonitorHeart, "No vitals yet", "BP, weight, pulse ox show up here after sync.")
 	FilterType.MEDICATIONS -> Triple(Icons.Outlined.LocalPharmacy, "No medications", "Active prescriptions appear here.")
-	FilterType.CONDITIONS -> Triple(Icons.Outlined.Healing, "No conditions", "Diagnosed conditions appear here.")
 	FilterType.ALLERGIES -> Triple(Icons.Outlined.Biotech, "No allergies", "Allergy records appear here.")
 	FilterType.ENCOUNTERS -> Triple(Icons.Outlined.LocalHospital, "No encounters", "Visits and appointments appear here.")
 	FilterType.DOCUMENTS -> Triple(Icons.Outlined.Assignment, "No documents", "Attached documents appear here.")

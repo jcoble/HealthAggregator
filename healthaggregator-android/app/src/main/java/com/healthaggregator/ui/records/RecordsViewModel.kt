@@ -7,7 +7,6 @@ import com.healthaggregator.data.LabPanelAggregate
 import com.healthaggregator.ui.components.SortOrder
 import com.healthaggregator.ui.components.toggled
 import com.healthaggregator.data.entities.AllergyRecord
-import com.healthaggregator.data.entities.ConditionRecord
 import com.healthaggregator.data.entities.DocumentRecord
 import com.healthaggregator.data.entities.EncounterRecord
 import com.healthaggregator.data.entities.LabObservation
@@ -28,7 +27,6 @@ enum class FilterType(val navKey: String, val chipLabel: String) {
 	LABS("labs", "Labs"),
 	VITALS("vitals", "Vitals"),
 	MEDICATIONS("medications", "Meds"),
-	CONDITIONS("conditions", "Conditions"),
 	ALLERGIES("allergies", "Allergies"),
 	ENCOUNTERS("encounters", "Encounters"),
 	DOCUMENTS("documents", "Documents");
@@ -111,7 +109,6 @@ class RecordsViewModel @Inject constructor(
 	private val labRowsFlow = records.observeLabs().map { list -> list.map { it.toRow() } }
 	private val vitalRowsFlow = records.observeVitals().map { list -> list.map { it.toRow() } }
 	private val medRowsFlow = records.observeMedications().map { list -> list.map { it.toRow() } }
-	private val conditionRowsFlow = records.observeConditions().map { list -> list.map { it.toRow() } }
 	private val allergyRowsFlow = records.observeAllergies().map { list -> list.map { it.toRow() } }
 	private val encounterRowsFlow = records.observeEncounters().map { list -> list.map { it.toRow() } }
 	private val documentRowsFlow = records.observeDocuments().map { list -> list.map { it.toRow() } }
@@ -120,13 +117,11 @@ class RecordsViewModel @Inject constructor(
 		when (f) {
 			FilterType.ALL -> combine(
 				labRowsFlow, vitalRowsFlow, medRowsFlow,
-				conditionRowsFlow, allergyRowsFlow,
-				encounterRowsFlow, documentRowsFlow,
+				allergyRowsFlow, encounterRowsFlow, documentRowsFlow,
 			) { arr -> arr.toList().flatten().sortedByDescending { it.effectiveAt ?: Instant.EPOCH } }
 			FilterType.LABS -> labRowsFlow
 			FilterType.VITALS -> vitalRowsFlow
 			FilterType.MEDICATIONS -> medRowsFlow
-			FilterType.CONDITIONS -> conditionRowsFlow
 			FilterType.ALLERGIES -> allergyRowsFlow
 			FilterType.ENCOUNTERS -> encounterRowsFlow
 			FilterType.DOCUMENTS -> documentRowsFlow
@@ -194,21 +189,6 @@ private fun MedicationRecord.toRow() = RecordRowData(
 	fhirReference = fhirReference,
 	effectiveAt = authoredAt,
 )
-
-private fun ConditionRecord.toRow(): RecordRowData {
-	val primaryDate = onsetAt ?: recordedAt
-	return RecordRowData(
-		id = "cond-$id",
-		kind = FilterType.CONDITIONS,
-		title = codeText ?: "Unknown condition",
-		summary = listOfNotNull(clinicalStatus, primaryDate?.let { formatDate(it) }).joinToString(" — "),
-		sourceSystem = sourceSystem,
-		sourceName = sourceName,
-		trailingText = null,
-		fhirReference = fhirReference,
-		effectiveAt = primaryDate,
-	)
-}
 
 private fun AllergyRecord.toRow() = RecordRowData(
 	id = "allergy-$id",

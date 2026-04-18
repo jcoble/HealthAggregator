@@ -33,7 +33,6 @@ class HealthSnapshotBuilderTest {
 			labs = db.labDao(),
 			vitals = db.vitalsDao(),
 			medications = db.medicationDao(),
-			conditions = db.conditionDao(),
 			allergies = db.allergyDao(),
 			documents = db.documentDao(),
 		)

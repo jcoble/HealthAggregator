@@ -93,8 +93,9 @@ class FhirImportService @Inject constructor(
 						counts.reports++
 					}
 					"Condition" -> {
-						db.conditionDao().upsert(buildCondition(sourceSystem, sourceName, root, resourceId, fhirReference, now))
-						counts.conditions++
+						// Intentionally dropped. User does not want Condition resources influencing
+						// diagnosis reasoning; Conditions were wiped in migration 6→7 and nothing
+						// feeds the table anymore. Source_records still stores the raw FHIR blob.
 					}
 					"MedicationRequest", "MedicationStatement", "Medication" -> {
 						db.medicationDao().upsert(buildMedication(sourceSystem, sourceName, root, resourceType, resourceId, fhirReference, now))

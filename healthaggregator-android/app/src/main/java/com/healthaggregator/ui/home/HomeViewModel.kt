@@ -19,7 +19,6 @@ data class HomeUiState(
 	val labs: Int = 0,
 	val vitals: Int = 0,
 	val medications: Int = 0,
-	val conditions: Int = 0,
 	val allergies: Int = 0,
 	val encounters: Int = 0,
 	val documents: Int = 0,
@@ -30,7 +29,7 @@ data class HomeUiState(
 
 private data class Counts(
 	val labs: Int, val vitals: Int, val meds: Int,
-	val conditions: Int, val allergies: Int,
+	val allergies: Int,
 	val encounters: Int, val docs: Int,
 )
 
@@ -45,10 +44,9 @@ class HomeViewModel @Inject constructor(
 
 	private val countsFlow: Flow<Counts> = combine(
 		records.countLabs(), records.countVitals(), records.countMedications(),
-		records.countConditions(), records.countAllergies(),
-		records.countEncounters(), records.countDocuments(),
+		records.countAllergies(), records.countEncounters(), records.countDocuments(),
 	) { arr ->
-		Counts(arr[0], arr[1], arr[2], arr[3], arr[4], arr[5], arr[6])
+		Counts(arr[0], arr[1], arr[2], arr[3], arr[4], arr[5])
 	}
 
 	val uiState: StateFlow<HomeUiState> = combine(
@@ -62,7 +60,7 @@ class HomeViewModel @Inject constructor(
 			permissionsGranted = perm,
 			healthConnectAvailable = reader.isAvailable(),
 			labs = c.labs, vitals = c.vitals, medications = c.meds,
-			conditions = c.conditions, allergies = c.allergies, encounters = c.encounters,
+			allergies = c.allergies, encounters = c.encounters,
 			documents = c.docs,
 			sources = srcs,
 			latestSync = latest,

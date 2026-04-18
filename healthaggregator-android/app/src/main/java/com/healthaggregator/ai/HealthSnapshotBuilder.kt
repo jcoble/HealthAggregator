@@ -1,7 +1,6 @@
 package com.healthaggregator.ai
 
 import com.healthaggregator.data.dao.AllergyDao
-import com.healthaggregator.data.dao.ConditionDao
 import com.healthaggregator.data.dao.DocumentDao
 import com.healthaggregator.data.dao.LabDao
 import com.healthaggregator.data.dao.MedicationDao
@@ -19,7 +18,6 @@ class HealthSnapshotBuilder @Inject constructor(
 	private val labs: LabDao,
 	private val vitals: VitalsDao,
 	private val medications: MedicationDao,
-	private val conditions: ConditionDao,
 	private val allergies: AllergyDao,
 	private val documents: DocumentDao,
 ) {
@@ -27,7 +25,6 @@ class HealthSnapshotBuilder @Inject constructor(
 		val allLabs = labs.getAllSnapshot().sortedBy { it.effectiveAt }
 		val allVitals = vitals.getAllSnapshot().sortedBy { it.effectiveAt }
 		val allMeds = medications.getAllSnapshot()
-		val allConditions = conditions.getAllSnapshot()
 		val allAllergies = allergies.getAllSnapshot()
 		val allDocs = documents.getAllSnapshot()
 
@@ -70,14 +67,9 @@ class HealthSnapshotBuilder @Inject constructor(
 			}
 			appendLine()
 
-			appendLine("## Conditions")
-			appendLine()
-			if (allConditions.isEmpty()) appendLine("_(none)_") else allConditions.forEach { c ->
-				val status = c.clinicalStatus?.let { " — $it" } ?: ""
-				val onset = c.onsetAt?.let { " (onset ${isoDate(it)})" } ?: ""
-				appendLine("- ${c.codeText ?: "(unknown)"}$status$onset [cite:${c.sourceSystem}/${c.fhirReference}]")
-			}
-			appendLine()
+			// Conditions intentionally omitted from this snapshot. The user does not trust
+			// historical Condition FHIR records (wrong/irrelevant entries) and provides real
+			// diagnoses verbally when they matter. Do not infer conditions from data alone.
 
 			appendLine("## Allergies")
 			appendLine()

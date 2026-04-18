@@ -43,6 +43,7 @@ class AssistantRepositoryTest {
 			encounters = db.encounterDao(),
 			documents = db.documentDao(),
 			sources = db.medicalDataSourceDao(),
+			sourceSummaries = db.sourceSummaryDao(),
 			syncJobs = db.syncJobDao(),
 			sourceRecords = db.sourceRecordDao(),
 		)
@@ -59,7 +60,6 @@ class AssistantRepositoryTest {
 				labs = db.labDao(),
 				vitals = db.vitalsDao(),
 				medications = db.medicationDao(),
-				conditions = db.conditionDao(),
 				allergies = db.allergyDao(),
 				documents = db.documentDao(),
 			),

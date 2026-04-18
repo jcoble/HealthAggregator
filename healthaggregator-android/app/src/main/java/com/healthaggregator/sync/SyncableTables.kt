@@ -13,7 +13,8 @@ enum class SyncableTable(val tableName: String, val mergeStrategy: MergeStrategy
 	PATIENTS("patients", MergeStrategy.InsertOrIgnore),
 	LAB_OBSERVATIONS("lab_observations", MergeStrategy.InsertOrIgnore),
 	VITALS_OBSERVATIONS("vitals_observations", MergeStrategy.InsertOrIgnore),
-	CONDITIONS("conditions", MergeStrategy.InsertOrIgnore),
+	// CONDITIONS intentionally omitted — user opted out in migration 6→7. Phone neither
+	// pushes nor pulls conditions; the table exists but stays empty.
 	MEDICATIONS("medications", MergeStrategy.InsertOrIgnore),
 	ALLERGIES("allergies", MergeStrategy.InsertOrIgnore),
 	ENCOUNTERS("encounters", MergeStrategy.InsertOrIgnore),

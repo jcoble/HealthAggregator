@@ -53,12 +53,13 @@ class FhirImportServiceTest {
 		assertEquals(80.0, diastolic!!.numericValue!!, 0.001)
 	}
 
-	@Test fun condition_routes_to_ConditionDao() = runTest {
+	@Test fun condition_does_not_route_to_ConditionDao() = runTest {
+		// User opted out of Condition ingest in migration 6→7. Condition resources still
+		// land in source_records as raw backups but never populate the typed conditions table.
 		val counts = service.importResources("cleveland-clinic", "Cleveland Clinic", listOf(TestFhirFixtures.CONDITION_ASTHMA))
-		assertEquals(1, counts.conditions)
-		val c = db.conditionDao().observeAll().first().first()
-		assertEquals("Asthma", c.codeText)
-		assertEquals("active", c.clinicalStatus)
+		assertEquals(0, counts.conditions)
+		assertEquals(1, counts.sourceRecords)
+		assertEquals(0, db.conditionDao().observeAll().first().size)
 	}
 
 	@Test fun unknown_resource_type_only_stores_SourceRecord() = runTest {
