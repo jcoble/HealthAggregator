@@ -99,6 +99,21 @@ The default for any load-bearing claim is "I need to verify this against a prima
 - **Always verify migration SQL before applying to a shared environment.** Use `dotnet ef migrations script <From> <To> --project HealthAggregator.Data --startup-project HealthAggregator.Api` and review the output.
 - **Never hand-edit a migration that has already been applied** anywhere — generate a new corrective migration instead.
 
+### Android install safety — NEVER install the debug APK without a DB backup
+
+Installing the Android debug APK can silently wipe all app data if the signing certificate differs from what's already installed on the device (Android refuses to "update" a package with a different signature and falls back to uninstall+reinstall). This happened 2026-04-18 and cost real FHIR + γ chat data.
+
+**Always use `./scripts/safe-install-debug.sh` instead of `./gradlew :app:installDebug` directly.** The safe script:
+1. Builds the APK.
+2. Backs up the phone DB (all 3 SQLite files + WAL checkpoint) to `~/HealthAggregatorData/backups/<timestamp>/`.
+3. Compares signing cert against the installed app; aborts with `--force-wipe` required if they differ.
+4. Runs `installDebug`.
+5. Verifies `firstInstallTime` didn't jump (which would indicate a wipe happened anyway).
+
+Standalone backup at any time: `./scripts/backup-phone-db.sh`.
+
+Do NOT run `./gradlew :app:installDebug` or `adb install` directly. Do NOT run `adb uninstall com.healthaggregator` unless the user has explicitly approved a data wipe. If a subagent or automated workflow needs to install, route it through the safe script.
+
 ### Debugging & bug fixing
 
 - **Reproduce → diagnose → fix.** Don't propose a fix until you've confirmed the root cause.
