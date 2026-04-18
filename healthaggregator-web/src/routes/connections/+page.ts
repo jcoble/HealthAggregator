@@ -8,6 +8,7 @@ export const load: PageLoad = async ({ fetch }) => {
 	]);
 	return {
 		configured: orgsResponse.configured,
+		clientIds: orgsResponse.clientIds,
 		orgs: orgsResponse.organizations,
 		connections
 	};

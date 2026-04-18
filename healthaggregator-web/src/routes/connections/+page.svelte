@@ -27,6 +27,17 @@
 		return data.connections.find(c => c.organizationId === orgId);
 	}
 
+	function clientIdAvailable(org: EpicOrganization): boolean {
+		const c = data.clientIds;
+		const specific = org.isSandbox ? c.nonProduction : c.production;
+		return specific || c.legacy;
+	}
+
+	function clientIdHint(org: EpicOrganization): string {
+		const specificKey = org.isSandbox ? 'Epic:NonProductionClientId' : 'Epic:ProductionClientId';
+		return `Set ${specificKey} (or Epic:ClientId as a fallback) to enable`;
+	}
+
 	async function onConnect(org: EpicOrganization) {
 		if (!org.fhirBaseUrl) {
 			toast.error(`${org.name}: FhirBaseUrl is not configured in appsettings.json`);
@@ -91,9 +102,9 @@
 
 {#if !data.configured}
 	<div class="mb-6">
-		<ErrorBanner variant="warning" title="Epic Client ID is not configured">
-			Set it before connecting:
-			<code class="ml-1 bg-[var(--muted)] px-1.5 py-0.5 rounded text-xs">dotnet user-secrets set "Epic:ClientId" "&lt;id&gt;" --project HealthAggregator.Api</code>
+		<ErrorBanner variant="warning" title="No Epic client IDs configured">
+			Set at least one before connecting (see the Epic tab in <a href="/settings" class="underline">Settings</a> for the full list of keys):
+			<code class="ml-1 bg-[var(--muted)] px-1.5 py-0.5 rounded text-xs">dotnet user-secrets set "Epic:NonProductionClientId" "&lt;sandbox-id&gt;" --project HealthAggregator.Api</code>
 		</ErrorBanner>
 	</div>
 {/if}
@@ -109,6 +120,7 @@
 				{@const connection = findConnection(org.id)}
 				{@const connected = connection?.hasToken}
 				{@const missingUrl = !org.fhirBaseUrl}
+				{@const missingClientId = !clientIdAvailable(org)}
 				<li class="flex items-center gap-4 px-4 py-3" data-testid={`org-row-${org.id}`}>
 					<span class={`w-2 h-2 rounded-full ${connected ? 'bg-[var(--success)]' : 'bg-[var(--muted-foreground)]'}`}></span>
 					<SourceBadge sourceSystem={org.id} sourceName={org.name} />
@@ -118,7 +130,9 @@
 							{#if org.isSandbox}<Badge variant="secondary">sandbox</Badge>{/if}
 						</div>
 						{#if missingUrl}
-							<div class="text-xs text-[var(--muted-foreground)] mt-0.5">Configure FhirBaseUrl in appsettings.json to enable</div>
+							<div class="text-xs text-[var(--warning)] mt-0.5" data-testid={`org-hint-${org.id}`}>Configure FhirBaseUrl in appsettings.json to enable</div>
+						{:else if missingClientId && !connected}
+							<div class="text-xs text-[var(--warning)] mt-0.5" data-testid={`org-hint-${org.id}`}>{clientIdHint(org)}</div>
 						{:else if connection}
 							<div class="text-xs text-[var(--muted-foreground)] mt-0.5">
 								Last sync {formatRelativeTime(connection.lastSyncedAt)} · Patient ID {connection.patientId ?? '—'}
@@ -162,7 +176,7 @@
 					{:else}
 						<Button
 							onclick={() => onConnect(org)}
-							disabled={!data.configured || missingUrl || connectingId === org.id}
+							disabled={missingUrl || missingClientId || connectingId === org.id}
 							data-testid={`org-connect-${org.id}`}
 						>
 							<LinkIcon size={14} />
