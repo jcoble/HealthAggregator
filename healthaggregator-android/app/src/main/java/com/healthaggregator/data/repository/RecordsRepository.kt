@@ -64,6 +64,9 @@ class RecordsRepository @Inject constructor(
 		labs.observeByLoincOrCanonical(loinc, canonical)
 	suspend fun findRawJson(source: String, fhirReference: String): String? = sourceRecords.findRawJson(source, fhirReference)
 
+	suspend fun searchRawJsonText(query: String, limit: Int): List<com.healthaggregator.data.entities.SourceRecord> =
+		sourceRecords.searchFreeText(query, limit)
+
 	suspend fun ensureNamesNormalized() {
 		val needsBackfill = labs.rowsNeedingCanonicalBackfill()
 		for (row in needsBackfill) {

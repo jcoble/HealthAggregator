@@ -34,4 +34,7 @@ interface SourceRecordDao {
 
 	@Query("SELECT rawJson FROM source_records WHERE sourceSystem = :source AND fhirReference = :ref LIMIT 1")
 	suspend fun findRawJson(source: String, ref: String): String?
+
+	@Query("SELECT * FROM source_records WHERE rawJson LIKE '%' || :query || '%' ORDER BY importedAt DESC LIMIT :limit")
+	suspend fun searchFreeText(query: String, limit: Int): List<SourceRecord>
 }
