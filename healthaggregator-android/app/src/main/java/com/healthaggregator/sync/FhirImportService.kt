@@ -203,7 +203,7 @@ class FhirImportService @Inject constructor(
 				displayName = parentName,
 				numericValue = value?.get("value")?.jsonPrimitive?.doubleOrNull,
 				unit = value?.get("unit")?.jsonPrimitive?.contentOrNull,
-				componentCode = null, effectiveAt = effective, importedAt = now,
+				componentCode = "", effectiveAt = effective, importedAt = now,
 			))
 		}
 		return components.map { compRaw ->

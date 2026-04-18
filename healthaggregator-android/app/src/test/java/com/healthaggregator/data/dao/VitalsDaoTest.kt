@@ -45,7 +45,7 @@ class VitalsDaoTest {
 	private fun sampleVital(
 		sourceSystem: String = "cleveland-clinic",
 		fhirReference: String = "Observation/bp-1",
-		componentCode: String? = null,
+		componentCode: String = "",
 		code: String = "Vital",
 		numericValue: Double? = 120.0,
 		unit: String? = "mmHg",

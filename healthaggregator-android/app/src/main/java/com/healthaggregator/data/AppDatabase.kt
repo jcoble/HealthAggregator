@@ -35,7 +35,7 @@ import com.healthaggregator.data.entities.*
 		ChatConversation::class,
 		ChatMessage::class,
 	],
-	version = 4,
+	version = 5,
 	exportSchema = true,
 )
 @TypeConverters(Converters::class)

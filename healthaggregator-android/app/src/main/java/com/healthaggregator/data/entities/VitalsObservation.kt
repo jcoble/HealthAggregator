@@ -7,7 +7,11 @@ import java.time.Instant
 
 /**
  * One row per FHIR Observation component (e.g., BP produces 2 rows: systolic + diastolic).
- * Non-component Observations (e.g., weight, pulse ox) produce a single row with componentCode = null.
+ * Non-component Observations (e.g., weight, pulse ox) produce a single row with componentCode = "".
+ *
+ * componentCode is NOT NULL (default "") because SQLite treats NULL values in unique indexes as
+ * distinct — a nullable componentCode makes the unique(sourceSystem, fhirReference, componentCode)
+ * index useless for the typical single-component case, causing every sync to re-insert duplicates.
  */
 @Entity(
 	tableName = "vitals_observations",
@@ -28,7 +32,7 @@ data class VitalsObservation(
 	val displayName: String,
 	val numericValue: Double? = null,
 	val unit: String? = null,
-	val componentCode: String? = null,
+	val componentCode: String = "",
 	val effectiveAt: Instant? = null,
 	val importedAt: Instant,
 )

@@ -136,7 +136,7 @@ class HealthSnapshotBuilder @Inject constructor(
 			rows.sortedBy { it.effectiveAt }.forEach { v ->
 				val date = v.effectiveAt?.let { isoDate(it) } ?: "n/a"
 				val valueStr = v.numericValue?.let { "$it ${v.unit ?: ""}" }?.trim() ?: "—"
-				val comp = v.componentCode?.let { " [$it]" } ?: ""
+				val comp = if (v.componentCode.isNotEmpty()) " [${v.componentCode}]" else ""
 				appendLine("- $date: $valueStr$comp (${v.sourceName}) [cite:${v.sourceSystem}/${v.fhirReference}]")
 			}
 			appendLine()
