@@ -158,6 +158,9 @@ class FhirImportService @Inject constructor(
 		val refHigh = range?.get("high")?.jsonObject?.get("value")?.jsonPrimitive?.doubleOrNull
 		val effective = parseInstant(root["effectiveDateTime"]?.jsonPrimitive?.contentOrNull)
 			?: parseInstant(root["effectiveInstant"]?.jsonPrimitive?.contentOrNull)
+		val basedOn = root["basedOn"]?.jsonArray?.firstOrNull()?.jsonObject
+		val serviceRequestReference = basedOn?.get("reference")?.jsonPrimitive?.contentOrNull
+		val serviceRequestDisplay = basedOn?.get("display")?.jsonPrimitive?.contentOrNull
 		return LabObservation(
 			sourceSystem = sourceSystem, sourceName = sourceName,
 			fhirReference = fhirRef, resourceId = resourceId,
@@ -171,6 +174,8 @@ class FhirImportService @Inject constructor(
 			effectiveAt = effective,
 			status = root["status"]?.jsonPrimitive?.contentOrNull ?: "",
 			importedAt = now,
+			serviceRequestReference = serviceRequestReference,
+			serviceRequestDisplay = serviceRequestDisplay,
 		)
 	}
 
