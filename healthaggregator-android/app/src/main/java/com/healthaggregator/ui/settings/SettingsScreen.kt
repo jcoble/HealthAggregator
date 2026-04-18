@@ -42,6 +42,8 @@ import java.time.Instant
 @Composable
 fun SettingsScreen(
 	onRequestPermissions: () -> Unit,
+	onPairLaptop: () -> Unit,
+	onOpenSyncLog: () -> Unit,
 	viewModel: SettingsViewModel = hiltViewModel(),
 ) {
 	val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -52,6 +54,12 @@ fun SettingsScreen(
 		modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
 	) {
 		TopAppBar(title = { Text("Settings") })
+
+		LaptopSyncSection(
+			onPair = onPairLaptop,
+			onOpenSyncLog = onOpenSyncLog,
+			modifier = Modifier.padding(horizontal = 16.dp),
+		)
 
 		SectionCard(title = "Health Connect") {
 			LabelValueRow("Available", if (state.healthConnectAvailable) "Yes" else "No")
