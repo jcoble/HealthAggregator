@@ -223,10 +223,13 @@ class OpenAiClient(
 
 	companion object {
 		private val JSON_MEDIA = "application/json; charset=utf-8".toMediaType()
+		// SSE streaming timeouts: reasoning models (gpt-5 family) can think for 60+s
+		// before emitting the first token. readTimeout=0 disables the per-read timeout
+		// (standard for SSE); callTimeout caps total wall time for the whole stream.
 		fun defaultHttp(): OkHttpClient = OkHttpClient.Builder()
 			.connectTimeout(20, TimeUnit.SECONDS)
-			.readTimeout(60, TimeUnit.SECONDS)
-			.callTimeout(180, TimeUnit.SECONDS)
+			.readTimeout(0, TimeUnit.MILLISECONDS)
+			.callTimeout(10, TimeUnit.MINUTES)
 			.build()
 	}
 }
