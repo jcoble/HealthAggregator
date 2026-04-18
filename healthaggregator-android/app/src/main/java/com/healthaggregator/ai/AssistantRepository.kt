@@ -47,6 +47,8 @@ class AssistantRepository @Inject constructor(
 		chat.deleteAllConversations()
 	}
 
+	suspend fun clearAllChatHistory() { chat.deleteAllConversations() }
+
 	fun send(conversationId: String, userText: String): Flow<StreamEvent> = flow {
 		val now = Instant.now()
 		val userMsg = ChatMessage(

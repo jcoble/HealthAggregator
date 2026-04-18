@@ -3,12 +3,14 @@ package com.healthaggregator.ui.settings
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.healthaggregator.ai.AssistantRepository
 import com.healthaggregator.data.AppDatabase
 import com.healthaggregator.data.dao.MedicalDataSourceDao
 import com.healthaggregator.data.entities.MedicalDataSource
 import com.healthaggregator.data.repository.RecordsRepository
 import com.healthaggregator.data.repository.SyncRepository
 import com.healthaggregator.sync.HealthConnectReader
+import com.healthaggregator.util.SecureStorage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.*
@@ -31,6 +33,8 @@ class SettingsViewModel @Inject constructor(
 	private val mdsDao: MedicalDataSourceDao,
 	private val db: AppDatabase,
 	@ApplicationContext private val context: Context,
+	val secureStorage: SecureStorage,
+	private val assistantRepo: AssistantRepository,
 ) : ViewModel() {
 
 	private val _permission = MutableStateFlow(false)
@@ -75,6 +79,10 @@ class SettingsViewModel @Inject constructor(
 
 	fun updateSourceDisplayName(id: Long, newDisplayName: String) {
 		viewModelScope.launch { mdsDao.updateDisplayName(id, newDisplayName) }
+	}
+
+	fun clearChatHistory() {
+		viewModelScope.launch { assistantRepo.clearAllChatHistory() }
 	}
 
 	private fun totalsFlow(): Flow<Int> = combine(
