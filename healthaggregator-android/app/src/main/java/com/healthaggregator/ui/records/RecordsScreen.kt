@@ -38,7 +38,12 @@ import com.healthaggregator.ui.theme.HealthAggregatorTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RecordsScreen(viewModel: RecordsViewModel = hiltViewModel()) {
+fun RecordsScreen(
+	onOpenPanel: (serviceRequestReference: String) -> Unit = {},
+	onOpenLab: (sourceSystem: String, fhirReference: String) -> Unit = { _, _ -> },
+	onOpenRecord: (sourceSystem: String, fhirReference: String) -> Unit = { _, _ -> },
+	viewModel: RecordsViewModel = hiltViewModel(),
+) {
 	val filter by viewModel.filter.collectAsStateWithLifecycle()
 	val rows by viewModel.rows.collectAsStateWithLifecycle()
 
