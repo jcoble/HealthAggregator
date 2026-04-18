@@ -1,5 +1,6 @@
 package com.healthaggregator.data.repository
 
+import com.healthaggregator.data.LabNameNormalizer
 import com.healthaggregator.data.LabPanelAggregate
 import com.healthaggregator.data.dao.AllergyDao
 import com.healthaggregator.data.dao.ConditionDao
@@ -60,4 +61,13 @@ class RecordsRepository @Inject constructor(
 	fun observeLabsByServiceRequest(sr: String): Flow<List<LabObservation>> = labs.observeByServiceRequest(sr)
 	fun observeLabsByLoinc(loinc: String): Flow<List<LabObservation>> = labs.observeByLoinc(loinc)
 	suspend fun findRawJson(source: String, fhirReference: String): String? = sourceRecords.findRawJson(source, fhirReference)
+
+	suspend fun ensureNamesNormalized() {
+		val needsBackfill = labs.rowsNeedingCanonicalBackfill()
+		for (row in needsBackfill) {
+			val canonicalPanel = LabNameNormalizer.normalize(row.serviceRequestDisplay)
+			val canonicalTest = LabNameNormalizer.normalize(row.testName)
+			labs.setCanonicals(row.id, canonicalPanel, canonicalTest)
+		}
+	}
 }

@@ -8,6 +8,8 @@ import com.healthaggregator.data.LabPanelAggregate
 import com.healthaggregator.data.entities.LabObservation
 import kotlinx.coroutines.flow.Flow
 
+data class BackfillRow(val id: Long, val testName: String, val serviceRequestDisplay: String?)
+
 @Dao
 interface LabDao {
 	// INSERT OR REPLACE so that re-importing the same (sourceSystem, fhirReference) updates
@@ -41,7 +43,7 @@ interface LabDao {
 
 	@Query("""
 		SELECT serviceRequestReference AS serviceRequestReference,
-		       COALESCE(serviceRequestDisplay, testName) AS displayName,
+		       COALESCE(canonicalPanelName, serviceRequestDisplay, testName) AS displayName,
 		       MIN(effectiveAt) AS effectiveAt,
 		       sourceSystem AS sourceSystem,
 		       sourceName AS sourceName,
@@ -52,4 +54,19 @@ interface LabDao {
 		ORDER BY MIN(effectiveAt) DESC
 	""")
 	fun observePanels(): Flow<List<LabPanelAggregate>>
+
+	@Query("""
+		SELECT id, testName, serviceRequestDisplay
+		FROM lab_observations
+		WHERE (canonicalPanelName IS NULL AND serviceRequestDisplay IS NOT NULL)
+		   OR canonicalTestName IS NULL
+	""")
+	suspend fun rowsNeedingCanonicalBackfill(): List<BackfillRow>
+
+	@Query("""
+		UPDATE lab_observations
+		SET canonicalPanelName = :canonicalPanel, canonicalTestName = :canonicalTest
+		WHERE id = :id
+	""")
+	suspend fun setCanonicals(id: Long, canonicalPanel: String?, canonicalTest: String?)
 }
