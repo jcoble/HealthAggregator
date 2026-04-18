@@ -38,6 +38,20 @@ interface LabDao {
 	@Query("SELECT * FROM lab_observations WHERE loincCode = :loinc ORDER BY effectiveAt DESC")
 	fun observeByLoinc(loinc: String): Flow<List<LabObservation>>
 
+	/**
+	 * Cross-organization trend query: returns every lab whose loincCode matches OR whose
+	 * canonicalTestName matches. Pass both keys from the "current" lab. Either arg may be
+	 * null — the corresponding branch then matches nothing. Rows are de-duplicated by id
+	 * since a single row may satisfy both predicates.
+	 */
+	@Query("""
+		SELECT * FROM lab_observations
+		WHERE (:loinc IS NOT NULL AND loincCode = :loinc)
+		   OR (:canonical IS NOT NULL AND canonicalTestName = :canonical)
+		ORDER BY effectiveAt DESC
+	""")
+	fun observeByLoincOrCanonical(loinc: String?, canonical: String?): Flow<List<LabObservation>>
+
 	@Query("SELECT * FROM lab_observations WHERE serviceRequestReference = :sr ORDER BY effectiveAt DESC")
 	fun observeByServiceRequest(sr: String): Flow<List<LabObservation>>
 

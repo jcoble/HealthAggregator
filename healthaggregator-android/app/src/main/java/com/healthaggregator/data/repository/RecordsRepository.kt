@@ -60,6 +60,8 @@ class RecordsRepository @Inject constructor(
 	fun observePanels(): Flow<List<LabPanelAggregate>> = labs.observePanels()
 	fun observeLabsByServiceRequest(sr: String): Flow<List<LabObservation>> = labs.observeByServiceRequest(sr)
 	fun observeLabsByLoinc(loinc: String): Flow<List<LabObservation>> = labs.observeByLoinc(loinc)
+	fun observeLabsByLoincOrCanonical(loinc: String?, canonical: String?): Flow<List<LabObservation>> =
+		labs.observeByLoincOrCanonical(loinc, canonical)
 	suspend fun findRawJson(source: String, fhirReference: String): String? = sourceRecords.findRawJson(source, fhirReference)
 
 	suspend fun ensureNamesNormalized() {
