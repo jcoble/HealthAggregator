@@ -1,14 +1,17 @@
 package com.healthaggregator.data.dao
 
 import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import androidx.room.Upsert
 import com.healthaggregator.data.entities.MedicalDataSource
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface MedicalDataSourceDao {
-	@Upsert
+	// INSERT OR REPLACE so that re-syncing the same healthConnectSourceId updates the row.
+	// Room's @Upsert only handles PK conflicts, not secondary unique indexes.
+	@Insert(onConflict = OnConflictStrategy.REPLACE)
 	suspend fun upsert(src: MedicalDataSource)
 
 	@Query("SELECT * FROM medical_data_sources WHERE healthConnectSourceId = :hcId LIMIT 1")

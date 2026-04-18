@@ -1,17 +1,20 @@
 package com.healthaggregator.data.dao
 
 import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import androidx.room.Upsert
 import com.healthaggregator.data.entities.AllergyRecord
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface AllergyDao {
-	@Upsert
+	// INSERT OR REPLACE so that re-importing the same (sourceSystem, fhirReference) updates
+	// the existing row. Room's @Upsert only handles PK conflicts, not secondary unique indexes.
+	@Insert(onConflict = OnConflictStrategy.REPLACE)
 	suspend fun upsertAll(items: List<AllergyRecord>)
 
-	@Upsert
+	@Insert(onConflict = OnConflictStrategy.REPLACE)
 	suspend fun upsert(item: AllergyRecord)
 
 	@Query("SELECT * FROM allergies ORDER BY recordedAt DESC, id DESC")

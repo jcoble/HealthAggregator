@@ -45,6 +45,12 @@ android {
 		compose = true
 	}
 
+	testOptions {
+		unitTests {
+			isIncludeAndroidResources = true
+		}
+	}
+
 	packaging {
 		resources {
 			excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -89,6 +95,14 @@ dependencies {
 	testImplementation(libs.turbine)
 	testImplementation(libs.androidx.room.testing)
 	testImplementation(libs.kotlinx.coroutines)
+
+	// DAO tests — JUnit 4 + Robolectric + vintage bridge
+	testImplementation("junit:junit:4.13.2")
+	testRuntimeOnly("org.junit.vintage:junit-vintage-engine:5.11.3")
+	testImplementation("org.robolectric:robolectric:4.14")
+	testImplementation("androidx.test:core-ktx:1.6.1")
+	testImplementation("androidx.test.ext:junit-ktx:1.2.1")
+	testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
 }
 
 tasks.withType<Test> {
