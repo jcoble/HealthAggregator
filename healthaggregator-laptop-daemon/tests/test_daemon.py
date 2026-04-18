@@ -93,3 +93,34 @@ def test_push_inserts_rows_into_db(tmp_data_dir) -> None:
     body2 = r2.json()
     assert body2["inserted_by_table"]["lab_observations"] == 0
     assert body2["ignored_by_table"]["lab_observations"] == 1
+
+
+def test_pull_returns_rows_for_existing_table(tmp_data_dir) -> None:
+    import sqlite3
+    from config import Config, load_or_create_token
+
+    cfg = Config.from_env()
+    with sqlite3.connect(cfg.db_path) as conn:
+        conn.execute(
+            """CREATE TABLE patient_records (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                sourceSystem TEXT NOT NULL,
+                fhirReference TEXT NOT NULL,
+                UNIQUE(sourceSystem, fhirReference)
+            )"""
+        )
+        conn.execute(
+            "INSERT INTO patient_records (sourceSystem, fhirReference) VALUES (?, ?)",
+            ("EpicCleveland", "Patient/99"),
+        )
+    token = load_or_create_token(cfg.token_path)
+
+    from daemon import make_app
+    from fastapi.testclient import TestClient
+    client = TestClient(make_app())
+
+    r = client.get("/sync/pull", headers={"Authorization": f"Bearer {token}"})
+    assert r.status_code == 200
+    body = r.json()
+    assert "patient_records" in body["rows_by_table"]
+    assert body["rows_by_table"]["patient_records"][0]["fhirReference"] == "Patient/99"

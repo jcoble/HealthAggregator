@@ -71,6 +71,11 @@ def make_app() -> FastAPI:
                 ignored[table_name] = ig
         return {"inserted_by_table": inserted, "ignored_by_table": ignored}
 
+    @app.get("/sync/pull", dependencies=[Depends(require_token)])
+    def pull() -> dict:
+        from row_io import read_all_rows
+        return {"rows_by_table": read_all_rows(cfg.db_path)}
+
     return app
 
 
