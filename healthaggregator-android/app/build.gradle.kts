@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-	namespace = "com.healthaggregator.bridge"
+	namespace = "com.healthaggregator"
 	compileSdk = 36
 
 	defaultConfig {
-		applicationId = "com.healthaggregator.bridge"
+		applicationId = "com.healthaggregator"
 		// Health Connect's Personal Health Record (clinical FHIR) API requires Android 16+ for the stable surface.
 		minSdk = 34
 		targetSdk = 36
