@@ -37,7 +37,7 @@ android {
 	kotlinOptions {
 		jvmTarget = "17"
 		freeCompilerArgs += listOf(
-			"-opt-in=androidx.health.connect.client.ExperimentalPersonalHealthRecordApi"
+			"-opt-in=androidx.health.connect.client.feature.ExperimentalPersonalHealthRecordApi"
 		)
 	}
 
