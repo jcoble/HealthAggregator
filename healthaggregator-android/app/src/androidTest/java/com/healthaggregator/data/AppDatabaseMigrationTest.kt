@@ -1,6 +1,5 @@
 package com.healthaggregator.data
 
-import androidx.room.Room
 import androidx.room.testing.MigrationTestHelper
 import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -23,6 +22,10 @@ class AppDatabaseMigrationTest {
 		FrameworkSQLiteOpenHelperFactory(),
 	)
 
+	private val factory by lazy {
+		MigrationFactory(InstrumentationRegistry.getInstrumentation().context)
+	}
+
 	@Test
 	fun migrate_1_to_2_preserves_existing_labs_and_adds_columns() {
 		// Seed v1: one row without the new columns
@@ -37,7 +40,7 @@ class AppDatabaseMigrationTest {
 		}
 
 		// Run migration and open as v2
-		val db2 = helper.runMigrationsAndValidate(dbName, 2, true, MIGRATION_1_2)
+		val db2 = helper.runMigrationsAndValidate(dbName, 2, true, factory.load(1, 2))
 
 		// Confirm row preserved + new columns readable as null
 		val cursor = db2.query("SELECT testName, serviceRequestReference, serviceRequestDisplay FROM lab_observations")
@@ -73,7 +76,7 @@ class AppDatabaseMigrationTest {
 			""".trimIndent())
 		}
 
-		val db3 = helper.runMigrationsAndValidate(dbName, 3, true, MIGRATION_2_3)
+		val db3 = helper.runMigrationsAndValidate(dbName, 3, true, factory.load(2, 3))
 
 		val cursor = db3.query("SELECT testName, serviceRequestDisplay, canonicalPanelName, canonicalTestName FROM lab_observations")
 		cursor.use {
@@ -108,7 +111,7 @@ class AppDatabaseMigrationTest {
 			close()
 		}
 
-		val db = helper.runMigrationsAndValidate(dbName, 4, true, MIGRATION_3_4)
+		val db = helper.runMigrationsAndValidate(dbName, 4, true, factory.load(3, 4))
 
 		// Existing row survived
 		db.query("SELECT COUNT(*) FROM lab_observations").use { c ->
