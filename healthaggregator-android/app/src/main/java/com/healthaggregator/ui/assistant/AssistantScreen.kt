@@ -101,22 +101,26 @@ fun AssistantScreen(
 					}
 				},
 			)
-			state.error?.let { err ->
+			val canRetry = !state.streaming && state.messages.lastOrNull()?.let { last ->
+				last.role == "user" || (last.role == "assistant" && last.content.isBlank())
+			} == true
+			if (state.error != null || canRetry) {
 				Row(
 					modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
 					verticalAlignment = Alignment.CenterVertically,
 					horizontalArrangement = Arrangement.SpaceBetween,
 				) {
 					Text(
-						text = "Error: $err",
-						color = MaterialTheme.colorScheme.error,
+						text = state.error?.let { "Error: $it" } ?: "No response yet — retry?",
+						color = if (state.error != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.secondary,
 						modifier = Modifier.weight(1f),
 					)
-					TextButton(
-						onClick = { viewModel.retryLast() },
-						enabled = !state.streaming && state.messages.any { it.role == "user" },
-					) { Text("Retry") }
-					TextButton(onClick = { viewModel.clearError() }) { Text("Dismiss") }
+					if (canRetry) {
+						TextButton(onClick = { viewModel.retryLast() }) { Text("Retry") }
+					}
+					if (state.error != null) {
+						TextButton(onClick = { viewModel.clearError() }) { Text("Dismiss") }
+					}
 				}
 			}
 			ChatPane(
