@@ -41,18 +41,18 @@ class SyncRepository @Inject constructor(
 
 	private suspend fun buildPushPayload(): PushRequest {
 		val rows = mutableMapOf<String, List<SyncRow>>()
-		rows["patient_records"] = db.patientDao().getAllSnapshot().map { serializer.toRow(it) }
-		rows["lab_observations"] = db.labDao().getAllSnapshot().map { serializer.toRow(it) }
-		rows["vitals_observations"] = db.vitalsDao().getAllSnapshot().map { serializer.toRow(it) }
-		rows["condition_records"] = db.conditionDao().getAllSnapshot().map { serializer.toRow(it) }
-		rows["medication_records"] = db.medicationDao().getAllSnapshot().map { serializer.toRow(it) }
-		rows["allergy_records"] = db.allergyDao().getAllSnapshot().map { serializer.toRow(it) }
-		rows["encounter_records"] = db.encounterDao().getAllSnapshot().map { serializer.toRow(it) }
-		rows["document_records"] = db.documentDao().getAllSnapshot().map { serializer.toRow(it) }
-		rows["diagnostic_report_records"] = db.diagnosticReportDao().getAllSnapshot().map { serializer.toRow(it) }
-		rows["source_records"] = db.sourceRecordDao().getAllSnapshot().map { serializer.toRow(it) }
-		rows["chat_conversations"] = db.chatDao().getAllConversationsSnapshot().map { serializer.toRow(it) }
-		rows["chat_messages"] = db.chatDao().getAllMessagesSnapshot().map { serializer.toRow(it) }
+		rows[SyncableTable.PATIENTS.tableName] = db.patientDao().getAllSnapshot().map { serializer.toRow(it) }
+		rows[SyncableTable.LAB_OBSERVATIONS.tableName] = db.labDao().getAllSnapshot().map { serializer.toRow(it) }
+		rows[SyncableTable.VITALS_OBSERVATIONS.tableName] = db.vitalsDao().getAllSnapshot().map { serializer.toRow(it) }
+		rows[SyncableTable.CONDITIONS.tableName] = db.conditionDao().getAllSnapshot().map { serializer.toRow(it) }
+		rows[SyncableTable.MEDICATIONS.tableName] = db.medicationDao().getAllSnapshot().map { serializer.toRow(it) }
+		rows[SyncableTable.ALLERGIES.tableName] = db.allergyDao().getAllSnapshot().map { serializer.toRow(it) }
+		rows[SyncableTable.ENCOUNTERS.tableName] = db.encounterDao().getAllSnapshot().map { serializer.toRow(it) }
+		rows[SyncableTable.DOCUMENTS.tableName] = db.documentDao().getAllSnapshot().map { serializer.toRow(it) }
+		rows[SyncableTable.DIAGNOSTIC_REPORTS.tableName] = db.diagnosticReportDao().getAllSnapshot().map { serializer.toRow(it) }
+		rows[SyncableTable.SOURCE_RECORDS.tableName] = db.sourceRecordDao().getAllSnapshot().map { serializer.toRow(it) }
+		rows[SyncableTable.CHAT_CONVERSATIONS.tableName] = db.chatDao().getAllConversationsSnapshot().map { serializer.toRow(it) }
+		rows[SyncableTable.CHAT_MESSAGES.tableName] = db.chatDao().getAllMessagesSnapshot().map { serializer.toRow(it) }
 		return PushRequest(batch_id = UUID.randomUUID().toString(), rows_by_table = rows)
 	}
 
@@ -60,18 +60,18 @@ class SyncRepository @Inject constructor(
 		val counts = mutableMapOf<String, Int>()
 		resp.rows_by_table.forEach { (tableName, rows) ->
 			counts[tableName] = when (tableName) {
-				"patient_records" -> mergePatients(rows)
-				"lab_observations" -> mergeLabs(rows)
-				"vitals_observations" -> mergeVitals(rows)
-				"condition_records" -> mergeConditions(rows)
-				"medication_records" -> mergeMedications(rows)
-				"allergy_records" -> mergeAllergies(rows)
-				"encounter_records" -> mergeEncounters(rows)
-				"document_records" -> mergeDocuments(rows)
-				"diagnostic_report_records" -> mergeDiagnosticReports(rows)
-				"source_records" -> mergeSourceRecords(rows)
-				"chat_conversations" -> mergeChatConversations(rows)
-				"chat_messages" -> mergeChatMessages(rows)
+				SyncableTable.PATIENTS.tableName -> mergePatients(rows)
+				SyncableTable.LAB_OBSERVATIONS.tableName -> mergeLabs(rows)
+				SyncableTable.VITALS_OBSERVATIONS.tableName -> mergeVitals(rows)
+				SyncableTable.CONDITIONS.tableName -> mergeConditions(rows)
+				SyncableTable.MEDICATIONS.tableName -> mergeMedications(rows)
+				SyncableTable.ALLERGIES.tableName -> mergeAllergies(rows)
+				SyncableTable.ENCOUNTERS.tableName -> mergeEncounters(rows)
+				SyncableTable.DOCUMENTS.tableName -> mergeDocuments(rows)
+				SyncableTable.DIAGNOSTIC_REPORTS.tableName -> mergeDiagnosticReports(rows)
+				SyncableTable.SOURCE_RECORDS.tableName -> mergeSourceRecords(rows)
+				SyncableTable.CHAT_CONVERSATIONS.tableName -> mergeChatConversations(rows)
+				SyncableTable.CHAT_MESSAGES.tableName -> mergeChatMessages(rows)
 				else -> 0
 			}
 		}

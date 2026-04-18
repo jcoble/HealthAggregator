@@ -78,10 +78,13 @@ def merge_rows(
     return inserted, ignored
 
 
+# Real SQLite table names — match @Entity(tableName=...) in the Android entities.
+# Note: several Android entities use shorter table names than the Kotlin class name
+# suggests (e.g. PatientRecord → "patients"); this is authoritative.
 _AUTOINCREMENT_TABLES = {
-    "patient_records", "lab_observations", "vitals_observations",
-    "condition_records", "medication_records", "allergy_records",
-    "encounter_records", "document_records", "diagnostic_report_records",
+    "patients", "lab_observations", "vitals_observations",
+    "conditions", "medications", "allergies",
+    "encounters", "documents", "diagnostic_reports",
     "source_records",
 }
 
@@ -94,17 +97,18 @@ def _strip_autoincrement_id(table_name: str, row: dict) -> dict:
 
 
 def natural_key_for(table_name: str) -> tuple[str, ...]:
-    """Return the natural-key columns for a syncable table. See spec §'Syncable tables'."""
+    """Return the natural-key columns for a syncable table. Must match the UNIQUE indexes
+    on the Android Room @Entity definitions (the source of truth)."""
     return {
-        "patient_records": ("sourceSystem", "fhirReference"),
+        "patients": ("sourceSystem", "fhirId"),
         "lab_observations": ("sourceSystem", "fhirReference"),
         "vitals_observations": ("sourceSystem", "fhirReference", "componentCode"),
-        "condition_records": ("sourceSystem", "fhirReference"),
-        "medication_records": ("sourceSystem", "fhirReference"),
-        "allergy_records": ("sourceSystem", "fhirReference"),
-        "encounter_records": ("sourceSystem", "fhirReference"),
-        "document_records": ("sourceSystem", "fhirReference"),
-        "diagnostic_report_records": ("sourceSystem", "fhirReference"),
+        "conditions": ("sourceSystem", "fhirReference"),
+        "medications": ("sourceSystem", "fhirReference"),
+        "allergies": ("sourceSystem", "fhirReference"),
+        "encounters": ("sourceSystem", "fhirReference"),
+        "documents": ("sourceSystem", "fhirReference"),
+        "diagnostic_reports": ("sourceSystem", "fhirReference"),
         "source_records": ("sourceSystem", "resourceType", "resourceId"),
         "chat_conversations": ("id",),
         "chat_messages": ("id",),

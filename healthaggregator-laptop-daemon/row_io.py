@@ -5,9 +5,9 @@ import sqlite3
 from pathlib import Path
 
 SYNCABLE_TABLES = [
-    "patient_records", "lab_observations", "vitals_observations",
-    "condition_records", "medication_records", "allergy_records",
-    "encounter_records", "document_records", "diagnostic_report_records",
+    "patients", "lab_observations", "vitals_observations",
+    "conditions", "medications", "allergies",
+    "encounters", "documents", "diagnostic_reports",
     "source_records", "chat_conversations", "chat_messages",
 ]
 

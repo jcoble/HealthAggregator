@@ -48,13 +48,13 @@ class SyncRepositoryTest {
 
 		fakeClient.pullResponse = PullResponse(
 			rows_by_table = mapOf(
-				"patient_records" to listOf(patientJson("LabCorp", "Patient/lc1")),
+				"patients" to listOf(patientJson("LabCorp", "Patient/lc1")),
 			),
 		)
 
 		val result = repo.syncNow().getOrThrow()
-		assertEquals(1, result.pushedRowsByTable["patient_records"] ?: 0)
-		assertEquals(1, result.pulledRowsByTable["patient_records"] ?: 0)
+		assertEquals(1, result.pushedRowsByTable["patients"] ?: 0)
+		assertEquals(1, result.pulledRowsByTable["patients"] ?: 0)
 
 		val allPatients = db.patientDao().getAllSnapshot()
 		assertEquals(2, allPatients.size)

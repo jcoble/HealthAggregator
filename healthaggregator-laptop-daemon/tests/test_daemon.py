@@ -102,15 +102,15 @@ def test_pull_returns_rows_for_existing_table(tmp_data_dir) -> None:
     cfg = Config.from_env()
     with sqlite3.connect(cfg.db_path) as conn:
         conn.execute(
-            """CREATE TABLE patient_records (
+            """CREATE TABLE patients (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 sourceSystem TEXT NOT NULL,
-                fhirReference TEXT NOT NULL,
-                UNIQUE(sourceSystem, fhirReference)
+                fhirId TEXT NOT NULL,
+                UNIQUE(sourceSystem, fhirId)
             )"""
         )
         conn.execute(
-            "INSERT INTO patient_records (sourceSystem, fhirReference) VALUES (?, ?)",
+            "INSERT INTO patients (sourceSystem, fhirId) VALUES (?, ?)",
             ("EpicCleveland", "Patient/99"),
         )
     token = load_or_create_token(cfg.token_path)
@@ -122,5 +122,5 @@ def test_pull_returns_rows_for_existing_table(tmp_data_dir) -> None:
     r = client.get("/sync/pull", headers={"Authorization": f"Bearer {token}"})
     assert r.status_code == 200
     body = r.json()
-    assert "patient_records" in body["rows_by_table"]
-    assert body["rows_by_table"]["patient_records"][0]["fhirReference"] == "Patient/99"
+    assert "patients" in body["rows_by_table"]
+    assert body["rows_by_table"]["patients"][0]["fhirId"] == "Patient/99"
