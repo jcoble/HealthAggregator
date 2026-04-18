@@ -2,6 +2,8 @@ plugins {
 	alias(libs.plugins.android.application)
 	alias(libs.plugins.kotlin.android)
 	alias(libs.plugins.kotlin.compose)
+	alias(libs.plugins.hilt)
+	alias(libs.plugins.ksp)
 }
 
 android {
@@ -15,6 +17,9 @@ android {
 		targetSdk = 36
 		versionCode = 1
 		versionName = "0.1.0"
+		ksp {
+			arg("room.schemaLocation", "$projectDir/schemas")
+		}
 	}
 
 	buildTypes {
@@ -62,4 +67,30 @@ dependencies {
 	implementation(libs.health.connect)
 	implementation(libs.okhttp)
 	implementation(libs.kotlinx.coroutines)
+
+	// Hilt
+	implementation(libs.hilt.android)
+	ksp(libs.hilt.compiler)
+	implementation(libs.androidx.hilt.navigation.compose)
+
+	// Room
+	implementation(libs.androidx.room.runtime)
+	implementation(libs.androidx.room.ktx)
+	ksp(libs.androidx.room.compiler)
+
+	// Navigation
+	implementation(libs.androidx.navigation.compose)
+
+	// Unit tests
+	testImplementation(libs.junit.jupiter.api)
+	testImplementation(libs.junit.jupiter.params)
+	testRuntimeOnly(libs.junit.jupiter.engine)
+	testImplementation(libs.mockk)
+	testImplementation(libs.turbine)
+	testImplementation(libs.androidx.room.testing)
+	testImplementation(libs.kotlinx.coroutines)
+}
+
+tasks.withType<Test> {
+	useJUnitPlatform()
 }
