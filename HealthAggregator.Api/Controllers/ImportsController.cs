@@ -28,12 +28,17 @@ public sealed class ImportsController(HealthAggregatorDbContext db, FhirImportSe
 
     [HttpPost]
     [RequestSizeLimit(50_000_000)]
-    public async Task<IActionResult> Upload([FromForm] IFormFile file, CancellationToken cancellationToken)
+    public async Task<IActionResult> Upload(
+        [FromForm] IFormFile file,
+        [FromQuery] string? source,
+        CancellationToken cancellationToken)
     {
         if (file.Length == 0)
         {
             return BadRequest("Upload a non-empty file.");
         }
+
+        var sourceSystem = string.IsNullOrWhiteSpace(source) ? "manual-upload" : source;
 
         await using var stream = file.OpenReadStream();
         using var reader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
@@ -41,13 +46,13 @@ public sealed class ImportsController(HealthAggregatorDbContext db, FhirImportSe
 
         if (LooksLikeJson(content))
         {
-            var summary = await importer.ImportBundleAsync("manual-upload", file.FileName, content, cancellationToken);
-            return Ok(new { kind = "fhir-json", summary });
+            var summary = await importer.ImportBundleAsync(sourceSystem, file.FileName, content, cancellationToken);
+            return Ok(new { kind = "fhir-json", source = sourceSystem, summary });
         }
 
         var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(content)));
         var record = await db.SourceRecords.SingleOrDefaultAsync(
-            candidate => candidate.SourceSystem == "manual-upload"
+            candidate => candidate.SourceSystem == sourceSystem
                 && candidate.ResourceType == "UploadedFile"
                 && candidate.ResourceId == hash,
             cancellationToken);
@@ -56,7 +61,7 @@ public sealed class ImportsController(HealthAggregatorDbContext db, FhirImportSe
         {
             record = new SourceRecord
             {
-                SourceSystem = "manual-upload",
+                SourceSystem = sourceSystem,
                 ResourceType = "UploadedFile",
                 ResourceId = hash
             };
@@ -76,13 +81,13 @@ public sealed class ImportsController(HealthAggregatorDbContext db, FhirImportSe
         record.ImportedAt = DateTimeOffset.UtcNow;
         db.AuditLog.Add(new AuditLog
         {
-            Action = "manual-upload",
+            Action = $"upload:{sourceSystem}",
             Detail = file.FileName,
             CreatedAt = DateTimeOffset.UtcNow
         });
         await db.SaveChangesAsync(cancellationToken);
 
-        return Ok(new { kind = "stored-file-metadata", hash });
+        return Ok(new { kind = "stored-file-metadata", source = sourceSystem, hash });
     }
 
     private static bool LooksLikeJson(string content)

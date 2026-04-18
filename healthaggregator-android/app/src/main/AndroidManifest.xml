@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+	<uses-permission android:name="android.permission.INTERNET" />
+
+	<!-- Health Connect clinical-record read permissions.
+	     These map 1:1 to the MedicalResource.FhirResourceType categories. -->
+	<uses-permission android:name="android.permission.health.READ_MEDICAL_DATA_ALLERGIES_INTOLERANCES" />
+	<uses-permission android:name="android.permission.health.READ_MEDICAL_DATA_CONDITIONS" />
+	<uses-permission android:name="android.permission.health.READ_MEDICAL_DATA_LABORATORY_RESULTS" />
+	<uses-permission android:name="android.permission.health.READ_MEDICAL_DATA_MEDICATIONS" />
+	<uses-permission android:name="android.permission.health.READ_MEDICAL_DATA_PATIENT_DEMOGRAPHICS" />
+	<uses-permission android:name="android.permission.health.READ_MEDICAL_DATA_PREGNANCY" />
+	<uses-permission android:name="android.permission.health.READ_MEDICAL_DATA_PROCEDURES" />
+	<uses-permission android:name="android.permission.health.READ_MEDICAL_DATA_SOCIAL_HISTORY" />
+	<uses-permission android:name="android.permission.health.READ_MEDICAL_DATA_VACCINES" />
+	<uses-permission android:name="android.permission.health.READ_MEDICAL_DATA_VISITS" />
+	<uses-permission android:name="android.permission.health.READ_MEDICAL_DATA_VITAL_SIGNS" />
+
+	<!-- Cleartext HTTP allowed for local-network self-signed-cert bypass. Not for public networks. -->
+	<application
+		android:allowBackup="false"
+		android:dataExtractionRules="@xml/data_extraction_rules"
+		android:fullBackupContent="false"
+		android:icon="@android:drawable/ic_dialog_info"
+		android:label="@string/app_name"
+		android:supportsRtl="true"
+		android:theme="@style/Theme.HealthAggregatorBridge"
+		android:usesCleartextTraffic="true">
+
+		<activity
+			android:name=".MainActivity"
+			android:exported="true"
+			android:label="@string/app_name"
+			android:theme="@style/Theme.HealthAggregatorBridge">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+			</intent-filter>
+
+			<!-- Health Connect permissions rationale intent (required by policy) -->
+			<intent-filter>
+				<action android:name="android.intent.action.VIEW_PERMISSION_USAGE" />
+				<category android:name="android.intent.category.HEALTH_PERMISSIONS" />
+			</intent-filter>
+		</activity>
+	</application>
+
+	<!-- Explicit package visibility for the Health Connect backend (per Android 11+ package filtering) -->
+	<queries>
+		<package android:name="com.google.android.apps.healthdata" />
+	</queries>
+
+</manifest>
