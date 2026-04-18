@@ -12,7 +12,9 @@ import com.healthaggregator.ui.records.LabDetailScreen
 import com.healthaggregator.ui.records.PanelDetailScreen
 import com.healthaggregator.ui.records.RecordDetailScreen
 import com.healthaggregator.ui.records.RecordsScreen
+import com.healthaggregator.ui.settings.LaptopPairingScreen
 import com.healthaggregator.ui.settings.SettingsScreen
+import com.healthaggregator.ui.settings.SyncLogScreen
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
@@ -55,7 +57,20 @@ fun AppNavHost(navController: NavHostController, onRequestPermissions: () -> Uni
 			)
 		}
 		composable(TopLevelRoute.SETTINGS.route) {
-			SettingsScreen(onRequestPermissions = onRequestPermissions)
+			SettingsScreen(
+				onRequestPermissions = onRequestPermissions,
+				onPairLaptop = { navController.navigate("laptop_pairing") },
+				onOpenSyncLog = { navController.navigate("sync_log") },
+			)
+		}
+		composable("laptop_pairing") {
+			LaptopPairingScreen(
+				onBack = { navController.popBackStack() },
+				onPaired = { navController.popBackStack() },
+			)
+		}
+		composable("sync_log") {
+			SyncLogScreen(onBack = { navController.popBackStack() })
 		}
 		composable(
 			route = "lab/{source}/{fhirRef}",
