@@ -79,8 +79,10 @@ dependencies {
 
 	implementation(libs.health.connect)
 	implementation(libs.okhttp)
+	implementation(libs.okhttp.sse)
 	implementation(libs.kotlinx.coroutines)
 	implementation(libs.kotlinx.serialization.json)
+	implementation(libs.androidx.security.crypto)
 
 	// Hilt
 	implementation(libs.hilt.android)
@@ -111,6 +113,7 @@ dependencies {
 	testImplementation("androidx.test:core-ktx:1.6.1")
 	testImplementation("androidx.test.ext:junit-ktx:1.2.1")
 	testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
+	testImplementation(libs.okhttp.mockwebserver)
 
 	// Instrumented migration tests
 	androidTestImplementation("androidx.room:room-testing:2.6.1")
