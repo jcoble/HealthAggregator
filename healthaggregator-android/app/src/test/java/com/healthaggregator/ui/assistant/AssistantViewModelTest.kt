@@ -1,8 +1,10 @@
 package com.healthaggregator.ui.assistant
 
+import android.content.Context
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.cash.turbine.test
 import com.healthaggregator.ai.AssistantRepository
+import com.healthaggregator.ai.ChatExporter
 import com.healthaggregator.data.entities.ChatConversation
 import com.healthaggregator.util.SecureStorage
 import io.mockk.every
@@ -45,7 +47,7 @@ class AssistantViewModelTest {
 		val convos = MutableStateFlow(listOf(conv("c1", "T")))
 		every { repo.observeConversations() } returns convos
 		every { repo.observeMessages(any()) } returns flowOf(emptyList())
-		val vm = AssistantViewModel(repo, makeSecure())
+		val vm = AssistantViewModel(repo, makeSecure(), mockk<ChatExporter>(relaxed = true), mockk<Context>(relaxed = true))
 
 		// Subscribe to uiState (activates WhileSubscribed stateIn) then advance.
 		val job = launch { vm.uiState.collect { } }
@@ -60,7 +62,7 @@ class AssistantViewModelTest {
 		val repo = mockk<AssistantRepository>(relaxed = true)
 		every { repo.observeConversations() } returns flowOf(emptyList())
 		every { repo.observeMessages(any()) } returns flowOf(emptyList())
-		val vm = AssistantViewModel(repo, makeSecure())
+		val vm = AssistantViewModel(repo, makeSecure(), mockk<ChatExporter>(relaxed = true), mockk<Context>(relaxed = true))
 		vm.send("   ")
 		vm.send("")
 		// No crash, no repo.send invocation = pass
@@ -72,7 +74,7 @@ class AssistantViewModelTest {
 		every { repo.observeConversations() } returns flowOf(emptyList())
 		every { repo.observeMessages(any()) } returns flowOf(emptyList())
 		val secure = makeSecure()
-		val vm = AssistantViewModel(repo, secure)
+		val vm = AssistantViewModel(repo, secure, mockk<ChatExporter>(relaxed = true), mockk<Context>(relaxed = true))
 		vm.acknowledgeDisclaimer()
 		verify { secure.disclaimerAcknowledged = true }
 	}

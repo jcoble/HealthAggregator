@@ -1,13 +1,16 @@
 package com.healthaggregator.ui.assistant
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.healthaggregator.ai.AssistantRepository
+import com.healthaggregator.ai.ChatExporter
 import com.healthaggregator.ai.StreamEvent
 import com.healthaggregator.data.entities.ChatConversation
 import com.healthaggregator.data.entities.ChatMessage
 import com.healthaggregator.util.SecureStorage
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -35,6 +38,8 @@ data class AssistantUiState(
 class AssistantViewModel @Inject constructor(
 	private val repo: AssistantRepository,
 	private val secure: SecureStorage,
+	private val exporter: ChatExporter,
+	@ApplicationContext private val appContext: Context,
 ) : ViewModel() {
 
 	private val activeId = MutableStateFlow<String?>(null)
@@ -108,6 +113,28 @@ class AssistantViewModel @Inject constructor(
 	}
 
 	fun clearError() { error.value = null }
+
+	fun exportMarkdown(onReady: (android.net.Uri) -> Unit) {
+		val id = activeId.value ?: return
+		viewModelScope.launch {
+			val md = exporter.exportMarkdown(id)
+			val file = java.io.File(appContext.cacheDir, "chat-${id.take(8)}.md")
+			file.writeText(md)
+			val uri = androidx.core.content.FileProvider.getUriForFile(appContext, "${appContext.packageName}.fileprovider", file)
+			onReady(uri)
+		}
+	}
+
+	fun exportPdf(onReady: (android.net.Uri) -> Unit) {
+		val id = activeId.value ?: return
+		viewModelScope.launch {
+			val bytes = exporter.exportPdf(id)
+			val file = java.io.File(appContext.cacheDir, "chat-${id.take(8)}.pdf")
+			file.writeBytes(bytes)
+			val uri = androidx.core.content.FileProvider.getUriForFile(appContext, "${appContext.packageName}.fileprovider", file)
+			onReady(uri)
+		}
+	}
 
 	private suspend fun runStream(id: String, text: String) {
 		streaming.value = true

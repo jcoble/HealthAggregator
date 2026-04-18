@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Menu
+import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -19,7 +20,10 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -74,6 +78,22 @@ fun AssistantScreen(
 				navigationIcon = {
 					IconButton(onClick = { scope.launch { drawerState.open() } }) {
 						Icon(Icons.Outlined.Menu, contentDescription = "Conversations")
+					}
+				},
+				actions = {
+					var showExport by remember { mutableStateOf(false) }
+					IconButton(
+						onClick = { showExport = true },
+						enabled = state.activeConversationId != null && state.messages.isNotEmpty(),
+					) {
+						Icon(Icons.Outlined.Share, contentDescription = "Export")
+					}
+					if (showExport) {
+						ExportDialog(
+							onDismiss = { showExport = false },
+							onExportMarkdown = viewModel::exportMarkdown,
+							onExportPdf = viewModel::exportPdf,
+						)
 					}
 				},
 			)
