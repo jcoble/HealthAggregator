@@ -6,6 +6,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.healthaggregator.ui.assistant.AssistantScreen
 import com.healthaggregator.ui.home.HomeScreen
 import com.healthaggregator.ui.records.LabDetailScreen
 import com.healthaggregator.ui.records.PanelDetailScreen
@@ -41,6 +42,16 @@ fun AppNavHost(navController: NavHostController, onRequestPermissions: () -> Uni
 				onOpenRecord = { source, fhirRef ->
 					navController.navigate("record/${encode(source)}/${encode(fhirRef)}")
 				},
+			)
+		}
+		composable(TopLevelRoute.ASSISTANT.route) {
+			AssistantScreen(
+				onCitationClick = { source, fhirRef ->
+					// Prefer the lab detail route if the fhirRef looks like an Observation; fall back to generic record.
+					val dest = if (fhirRef.startsWith("Observation/")) "lab" else "record"
+					navController.navigate("$dest/${encode(source)}/${encode(fhirRef)}")
+				},
+				onOpenSettings = { navController.navigate(TopLevelRoute.SETTINGS.route) },
 			)
 		}
 		composable(TopLevelRoute.SETTINGS.route) {

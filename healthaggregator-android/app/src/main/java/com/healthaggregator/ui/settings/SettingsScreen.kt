@@ -100,6 +100,13 @@ fun SettingsScreen(
 			) { Text("Reset local database") }
 		}
 
+		SectionCard(title = "AI Assistant") {
+			AiAssistantSettings(
+				secure = viewModel.secureStorage,
+				onClearHistory = { viewModel.clearChatHistory() },
+			)
+		}
+
 		SectionCard(title = "About") {
 			LabelValueRow("Version", "0.1.0 (α.1)")
 			Text(
