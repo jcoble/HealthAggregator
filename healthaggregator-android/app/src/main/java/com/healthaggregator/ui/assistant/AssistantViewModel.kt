@@ -108,6 +108,29 @@ class AssistantViewModel @Inject constructor(
 		viewModelScope.launch { runStream(id, trimmed) }
 	}
 
+	fun retryLast() {
+		val id = activeId.value ?: return
+		viewModelScope.launch {
+			streaming.value = true
+			error.value = null
+			try {
+				repo.retryLast(id).collect { ev ->
+					when (ev) {
+						is StreamEvent.ToolCallStarted -> activeToolCalls.update { it + ev.id }
+						is StreamEvent.ToolCallCompleted -> activeToolCalls.update { it - ev.id }
+						is StreamEvent.Error -> error.value = ev.message
+						StreamEvent.Done, is StreamEvent.TokenDelta -> {}
+					}
+				}
+			} catch (e: Exception) {
+				error.value = e.message ?: "unknown_error"
+			} finally {
+				streaming.value = false
+				activeToolCalls.value = emptySet()
+			}
+		}
+	}
+
 	fun acknowledgeDisclaimer() {
 		secure.disclaimerAcknowledged = true
 	}

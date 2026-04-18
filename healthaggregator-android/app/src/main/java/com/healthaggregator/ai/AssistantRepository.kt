@@ -67,7 +67,34 @@ class AssistantRepository @Inject constructor(
 			chat.renameConversation(conversationId, userText.take(60).trim().ifEmpty { "Chat" }, now)
 		}
 
+		streamAssistantResponse(conversationId).collect { emit(it) }
+	}
+
+	/**
+	 * Regenerates the assistant response for the last user message. Deletes the most recent
+	 * trailing assistant message (it's either empty or partial from the failed turn) and
+	 * re-runs the LLM stream with the existing user history intact.
+	 */
+	fun retryLast(conversationId: String): Flow<StreamEvent> = flow {
+		val messages = chat.messagesSnapshot(conversationId)
+		val lastUserIdx = messages.indexOfLast { it.role == "user" }
+		if (lastUserIdx == -1) {
+			emit(StreamEvent.Error("no_user_message_to_retry", retryable = false))
+			emit(StreamEvent.Done)
+			return@flow
+		}
+		// Delete every message after the last user message — typically the failed assistant
+		// placeholder (empty or partial). Tool messages aren't persisted at this layer, so
+		// the only thing to clean is the trailing assistant row.
+		messages.drop(lastUserIdx + 1).forEach { chat.deleteMessage(it.id) }
+		streamAssistantResponse(conversationId).collect { emit(it) }
+	}
+
+	private fun streamAssistantResponse(conversationId: String): Flow<StreamEvent> = flow {
+		val conversation = chat.getConversation(conversationId) ?: error("conversation not found: $conversationId")
+
 		val snapshot: String = conversation.snapshotText ?: run {
+			val now = Instant.now()
 			val built = snapshots.build(now)
 			chat.setSnapshot(conversationId, built, now)
 			built

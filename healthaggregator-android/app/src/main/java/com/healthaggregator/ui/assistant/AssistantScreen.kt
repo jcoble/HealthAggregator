@@ -1,6 +1,8 @@
 package com.healthaggregator.ui.assistant
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,8 +18,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDrawerState
+import androidx.compose.ui.Alignment
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -97,12 +101,23 @@ fun AssistantScreen(
 					}
 				},
 			)
-			state.error?.let {
-				Text(
-					text = "Error: $it",
-					color = MaterialTheme.colorScheme.error,
-					modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp).fillMaxWidth(),
-				)
+			state.error?.let { err ->
+				Row(
+					modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
+					verticalAlignment = Alignment.CenterVertically,
+					horizontalArrangement = Arrangement.SpaceBetween,
+				) {
+					Text(
+						text = "Error: $err",
+						color = MaterialTheme.colorScheme.error,
+						modifier = Modifier.weight(1f),
+					)
+					TextButton(
+						onClick = { viewModel.retryLast() },
+						enabled = !state.streaming && state.messages.any { it.role == "user" },
+					) { Text("Retry") }
+					TextButton(onClick = { viewModel.clearError() }) { Text("Dismiss") }
+				}
 			}
 			ChatPane(
 				messages = state.messages,

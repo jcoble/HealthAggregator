@@ -41,6 +41,9 @@ interface ChatDao {
 	@Query("UPDATE chat_conversations SET snapshotText = :text, snapshotGeneratedAt = :at WHERE id = :id")
 	suspend fun setSnapshot(id: String, text: String, at: Instant)
 
+	@Query("DELETE FROM chat_messages WHERE id = :id")
+	suspend fun deleteMessage(id: String)
+
 	@Query("DELETE FROM chat_conversations WHERE id = :id")
 	suspend fun deleteConversation(id: String)
 
