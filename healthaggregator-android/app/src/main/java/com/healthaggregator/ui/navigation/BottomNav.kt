@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 
@@ -33,9 +34,8 @@ fun AppBottomNav(navController: NavHostController) {
 				selected = selected,
 				onClick = {
 					navController.navigate(top.route) {
-						popUpTo(navController.graph.startDestinationId) { saveState = true }
+						popUpTo(navController.graph.findStartDestination().id) { inclusive = false }
 						launchSingleTop = true
-						restoreState = true
 					}
 				},
 				icon = { Icon(top.icon, contentDescription = top.label) },
