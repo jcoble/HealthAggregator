@@ -95,8 +95,8 @@ class FhirImportService @Inject constructor(
 						db.conditionDao().upsert(buildCondition(sourceSystem, sourceName, root, resourceId, fhirReference, now))
 						counts.conditions++
 					}
-					"MedicationRequest", "MedicationStatement" -> {
-						db.medicationDao().upsert(buildMedication(sourceSystem, sourceName, root, resourceId, fhirReference, now))
+					"MedicationRequest", "MedicationStatement", "Medication" -> {
+						db.medicationDao().upsert(buildMedication(sourceSystem, sourceName, root, resourceType, resourceId, fhirReference, now))
 						counts.medications++
 					}
 					"AllergyIntolerance" -> {
@@ -246,18 +246,30 @@ class FhirImportService @Inject constructor(
 			importedAt = now,
 		)
 
-	private fun buildMedication(sourceSystem: String, sourceName: String, root: JsonObject, resourceId: String, fhirRef: String, now: Instant) =
-		MedicationRecord(
+	private fun buildMedication(sourceSystem: String, sourceName: String, root: JsonObject, resourceType: String, resourceId: String, fhirRef: String, now: Instant): MedicationRecord {
+		val medicationText = when (resourceType) {
+			"Medication" -> codeTextOrDisplay(root["code"]?.jsonObject)
+			else -> codeTextOrDisplay(root["medicationCodeableConcept"]?.jsonObject)
+				?: root["medicationReference"]?.jsonObject?.get("display")?.jsonPrimitive?.contentOrNull
+				?: codeTextOrDisplay(root["code"]?.jsonObject)
+		}
+		return MedicationRecord(
 			sourceSystem = sourceSystem, sourceName = sourceName,
 			fhirReference = fhirRef, resourceId = resourceId,
 			patientFhirId = subjectRef(root),
-			medicationText = root["medicationCodeableConcept"]?.jsonObject?.get("text")?.jsonPrimitive?.contentOrNull
-				?: root["medicationReference"]?.jsonObject?.get("display")?.jsonPrimitive?.contentOrNull,
+			medicationText = medicationText,
 			status = root["status"]?.jsonPrimitive?.contentOrNull,
 			authoredAt = parseInstant(root["authoredOn"]?.jsonPrimitive?.contentOrNull)
 				?: parseInstant(root["dateAsserted"]?.jsonPrimitive?.contentOrNull),
 			importedAt = now,
 		)
+	}
+
+	private fun codeTextOrDisplay(code: JsonObject?): String? {
+		if (code == null) return null
+		return code["text"]?.jsonPrimitive?.contentOrNull
+			?: code["coding"]?.jsonArray?.firstOrNull()?.jsonObject?.get("display")?.jsonPrimitive?.contentOrNull
+	}
 
 	private fun buildAllergy(sourceSystem: String, sourceName: String, root: JsonObject, resourceId: String, fhirRef: String, now: Instant) =
 		AllergyRecord(
