@@ -10,6 +10,7 @@ import com.healthaggregator.data.dao.LabDao
 import com.healthaggregator.data.dao.MedicalDataSourceDao
 import com.healthaggregator.data.dao.MedicationDao
 import com.healthaggregator.data.dao.SourceRecordDao
+import com.healthaggregator.data.dao.SourceSummaryDao
 import com.healthaggregator.data.dao.SyncJobDao
 import com.healthaggregator.data.dao.VitalsDao
 import com.healthaggregator.data.entities.AllergyRecord
@@ -19,6 +20,7 @@ import com.healthaggregator.data.entities.EncounterRecord
 import com.healthaggregator.data.entities.LabObservation
 import com.healthaggregator.data.entities.MedicalDataSource
 import com.healthaggregator.data.entities.MedicationRecord
+import com.healthaggregator.data.entities.SourceSummary
 import com.healthaggregator.data.entities.SyncJob
 import com.healthaggregator.data.entities.VitalsObservation
 import kotlinx.coroutines.flow.Flow
@@ -35,6 +37,7 @@ class RecordsRepository @Inject constructor(
 	private val encounters: EncounterDao,
 	private val documents: DocumentDao,
 	private val sources: MedicalDataSourceDao,
+	private val sourceSummaries: SourceSummaryDao,
 	private val syncJobs: SyncJobDao,
 	private val sourceRecords: SourceRecordDao,
 ) {
@@ -46,6 +49,7 @@ class RecordsRepository @Inject constructor(
 	fun observeEncounters(): Flow<List<EncounterRecord>> = encounters.observeAll()
 	fun observeDocuments(): Flow<List<DocumentRecord>> = documents.observeAll()
 	fun observeSources(): Flow<List<MedicalDataSource>> = sources.observeAll()
+	fun observeSourcesSummary(): Flow<List<SourceSummary>> = sourceSummaries.observeSources()
 
 	fun countLabs(): Flow<Int> = labs.countAll()
 	fun countVitals(): Flow<Int> = vitals.countAll()

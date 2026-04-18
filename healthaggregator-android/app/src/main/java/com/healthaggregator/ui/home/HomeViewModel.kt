@@ -2,7 +2,7 @@ package com.healthaggregator.ui.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.healthaggregator.data.entities.MedicalDataSource
+import com.healthaggregator.data.entities.SourceSummary
 import com.healthaggregator.data.entities.SyncJob
 import com.healthaggregator.data.repository.RecordsRepository
 import com.healthaggregator.data.repository.SyncRepository
@@ -23,7 +23,7 @@ data class HomeUiState(
 	val allergies: Int = 0,
 	val encounters: Int = 0,
 	val documents: Int = 0,
-	val sources: List<MedicalDataSource> = emptyList(),
+	val sources: List<SourceSummary> = emptyList(),
 	val latestSync: SyncJob? = null,
 	val syncState: SyncState = SyncState.Idle,
 )
@@ -53,7 +53,7 @@ class HomeViewModel @Inject constructor(
 
 	val uiState: StateFlow<HomeUiState> = combine(
 		countsFlow,
-		records.observeSources(),
+		records.observeSourcesSummary(),
 		records.observeLatestSync(),
 		sync.state,
 		_permission,

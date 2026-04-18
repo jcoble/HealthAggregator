@@ -14,6 +14,7 @@ import com.healthaggregator.data.dao.MedicalDataSourceDao
 import com.healthaggregator.data.dao.MedicationDao
 import com.healthaggregator.data.dao.PatientDao
 import com.healthaggregator.data.dao.SourceRecordDao
+import com.healthaggregator.data.dao.SourceSummaryDao
 import com.healthaggregator.data.dao.SyncJobDao
 import com.healthaggregator.data.dao.VitalsDao
 import com.healthaggregator.data.entities.*
@@ -52,5 +53,6 @@ abstract class AppDatabase : RoomDatabase() {
 	abstract fun sourceRecordDao(): SourceRecordDao
 	abstract fun syncJobDao(): SyncJobDao
 	abstract fun medicalDataSourceDao(): MedicalDataSourceDao
+	abstract fun sourceSummaryDao(): SourceSummaryDao
 	abstract fun chatDao(): ChatDao
 }

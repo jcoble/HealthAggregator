@@ -39,5 +39,6 @@ object DatabaseModule {
 	@Provides fun provideSourceRecordDao(db: AppDatabase): SourceRecordDao = db.sourceRecordDao()
 	@Provides fun provideSyncJobDao(db: AppDatabase): SyncJobDao = db.syncJobDao()
 	@Provides fun provideMedicalDataSourceDao(db: AppDatabase): MedicalDataSourceDao = db.medicalDataSourceDao()
+	@Provides fun provideSourceSummaryDao(db: AppDatabase): SourceSummaryDao = db.sourceSummaryDao()
 	@Provides fun provideChatDao(db: AppDatabase): ChatDao = db.chatDao()
 }
