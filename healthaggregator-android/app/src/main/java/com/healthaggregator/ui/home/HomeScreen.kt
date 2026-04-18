@@ -1,6 +1,7 @@
 package com.healthaggregator.ui.home
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -8,9 +9,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Assignment
 import androidx.compose.material.icons.outlined.Biotech
@@ -86,86 +86,101 @@ fun HomeScreen(
 				)
 			}
 			else -> {
-				Row(
+				Column(
 					modifier = Modifier
-						.fillMaxWidth()
-						.padding(horizontal = 16.dp, vertical = 8.dp),
-					horizontalArrangement = Arrangement.End,
+						.fillMaxSize()
+						.verticalScroll(rememberScrollState()),
 				) {
-					SyncStatusChip(
-						lastSyncAt = state.latestSync?.completedAt,
-						isSyncing = state.syncState is SyncState.Syncing,
-						onRefresh = viewModel::refresh,
-					)
-				}
-
-				val tiles = listOf(
-					StatTile("all", Icons.Outlined.Folder, "Labs", state.labs),
-					StatTile("vitals", Icons.Outlined.MonitorHeart, "Vitals", state.vitals),
-					StatTile("medications", Icons.Outlined.LocalPharmacy, "Meds", state.medications),
-					StatTile("conditions", Icons.Outlined.Healing, "Conditions", state.conditions),
-					StatTile("allergies", Icons.Outlined.Biotech, "Allergies", state.allergies),
-					StatTile("encounters", Icons.Outlined.LocalHospital, "Encounters", state.encounters),
-					StatTile("documents", Icons.Outlined.Assignment, "Documents", state.documents),
-				)
-				LazyVerticalGrid(
-					columns = GridCells.Fixed(2),
-					contentPadding = androidx.compose.foundation.layout.PaddingValues(
-						horizontal = 16.dp,
-						vertical = 8.dp,
-					),
-					verticalArrangement = Arrangement.spacedBy(8.dp),
-					horizontalArrangement = Arrangement.spacedBy(8.dp),
-					modifier = Modifier.fillMaxWidth(),
-				) {
-					items(tiles, key = { it.key }) { tile ->
-						StatCard(
-							icon = tile.icon,
-							label = tile.label,
-							value = tile.value.toString(),
-							onClick = { onNavigateToRecords(tile.key) },
+					Row(
+						modifier = Modifier
+							.fillMaxWidth()
+							.padding(horizontal = 16.dp, vertical = 8.dp),
+						horizontalArrangement = Arrangement.End,
+					) {
+						SyncStatusChip(
+							lastSyncAt = state.latestSync?.completedAt,
+							isSyncing = state.syncState is SyncState.Syncing,
+							onRefresh = viewModel::refresh,
 						)
 					}
-				}
 
-				if (state.sources.isNotEmpty()) {
-					Spacer(Modifier.height(8.dp))
-					Card(
+					val tiles = listOf(
+						StatTile("all", Icons.Outlined.Folder, "Labs", state.labs),
+						StatTile("vitals", Icons.Outlined.MonitorHeart, "Vitals", state.vitals),
+						StatTile("medications", Icons.Outlined.LocalPharmacy, "Meds", state.medications),
+						StatTile("conditions", Icons.Outlined.Healing, "Conditions", state.conditions),
+						StatTile("allergies", Icons.Outlined.Biotech, "Allergies", state.allergies),
+						StatTile("encounters", Icons.Outlined.LocalHospital, "Encounters", state.encounters),
+						StatTile("documents", Icons.Outlined.Assignment, "Documents", state.documents),
+					)
+					Column(
 						modifier = Modifier
-							.padding(horizontal = 16.dp)
-							.fillMaxWidth(),
-						colors = CardDefaults.cardColors(
-							containerColor = MaterialTheme.colorScheme.surfaceContainer,
-						),
+							.fillMaxWidth()
+							.padding(horizontal = 16.dp, vertical = 8.dp),
+						verticalArrangement = Arrangement.spacedBy(8.dp),
 					) {
-						Column(modifier = Modifier.padding(16.dp)) {
-							Text(
-								text = "Connected sources",
-								style = MaterialTheme.typography.labelMedium,
-								color = MaterialTheme.colorScheme.secondary,
-							)
-							Spacer(Modifier.height(8.dp))
-							state.sources.forEach { src ->
-								Row(
-									modifier = Modifier
-										.fillMaxWidth()
-										.padding(vertical = 4.dp),
-									verticalAlignment = Alignment.CenterVertically,
-								) {
-									SourceBadge(
-										sourceSystem = src.sourceSystem,
-										sourceName = src.displayName,
-									)
-									Spacer(Modifier.height(8.dp))
-									Text(
-										text = "${src.recordCount} records",
-										style = MaterialTheme.typography.bodySmall,
-										color = MaterialTheme.colorScheme.secondary,
-										modifier = Modifier.padding(start = 12.dp),
-									)
+						tiles.chunked(2).forEach { rowTiles ->
+							Row(
+								modifier = Modifier.fillMaxWidth(),
+								horizontalArrangement = Arrangement.spacedBy(8.dp),
+							) {
+								rowTiles.forEach { tile ->
+									Box(modifier = Modifier.weight(1f)) {
+										StatCard(
+											icon = tile.icon,
+											label = tile.label,
+											value = tile.value.toString(),
+											onClick = { onNavigateToRecords(tile.key) },
+										)
+									}
+								}
+								if (rowTiles.size == 1) {
+									Spacer(modifier = Modifier.weight(1f))
 								}
 							}
 						}
+					}
+
+					if (state.sources.isNotEmpty()) {
+						Spacer(Modifier.height(8.dp))
+						Card(
+							modifier = Modifier
+								.padding(horizontal = 16.dp)
+								.fillMaxWidth(),
+							colors = CardDefaults.cardColors(
+								containerColor = MaterialTheme.colorScheme.surfaceContainer,
+							),
+						) {
+							Column(modifier = Modifier.padding(16.dp)) {
+								Text(
+									text = "Connected sources",
+									style = MaterialTheme.typography.labelMedium,
+									color = MaterialTheme.colorScheme.secondary,
+								)
+								Spacer(Modifier.height(8.dp))
+								state.sources.forEach { src ->
+									Row(
+										modifier = Modifier
+											.fillMaxWidth()
+											.padding(vertical = 4.dp),
+										verticalAlignment = Alignment.CenterVertically,
+									) {
+										SourceBadge(
+											sourceSystem = src.sourceSystem,
+											sourceName = src.displayName,
+										)
+										Spacer(Modifier.height(8.dp))
+										Text(
+											text = "${src.recordCount} records",
+											style = MaterialTheme.typography.bodySmall,
+											color = MaterialTheme.colorScheme.secondary,
+											modifier = Modifier.padding(start = 12.dp),
+										)
+									}
+								}
+							}
+						}
+						Spacer(Modifier.height(16.dp))
 					}
 				}
 			}
@@ -203,25 +218,29 @@ private fun PreviewPopulated() = HealthAggregatorTheme {
 		) {
 			SyncStatusChip(null, false, {})
 		}
-		LazyVerticalGrid(
-			columns = GridCells.Fixed(2),
-			contentPadding = androidx.compose.foundation.layout.PaddingValues(
-				horizontal = 16.dp,
-				vertical = 8.dp,
-			),
+		val previewTiles = listOf(
+			StatTile("all", Icons.Outlined.Folder, "Labs", 47),
+			StatTile("vitals", Icons.Outlined.MonitorHeart, "Vitals", 18),
+			StatTile("medications", Icons.Outlined.LocalPharmacy, "Meds", 6),
+			StatTile("conditions", Icons.Outlined.Healing, "Conditions", 3),
+		)
+		Column(
+			modifier = Modifier
+				.fillMaxWidth()
+				.padding(horizontal = 16.dp, vertical = 8.dp),
 			verticalArrangement = Arrangement.spacedBy(8.dp),
-			horizontalArrangement = Arrangement.spacedBy(8.dp),
 		) {
-			items(
-				listOf(
-					StatTile("all", Icons.Outlined.Folder, "Labs", 47),
-					StatTile("vitals", Icons.Outlined.MonitorHeart, "Vitals", 18),
-					StatTile("medications", Icons.Outlined.LocalPharmacy, "Meds", 6),
-					StatTile("conditions", Icons.Outlined.Healing, "Conditions", 3),
-				),
-				key = { it.key },
-			) { tile ->
-				StatCard(icon = tile.icon, label = tile.label, value = tile.value.toString())
+			previewTiles.chunked(2).forEach { rowTiles ->
+				Row(
+					modifier = Modifier.fillMaxWidth(),
+					horizontalArrangement = Arrangement.spacedBy(8.dp),
+				) {
+					rowTiles.forEach { tile ->
+						Box(modifier = Modifier.weight(1f)) {
+							StatCard(icon = tile.icon, label = tile.label, value = tile.value.toString())
+						}
+					}
+				}
 			}
 		}
 	}
