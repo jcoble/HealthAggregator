@@ -19,6 +19,7 @@
 
 	<!-- Cleartext HTTP allowed for local-network self-signed-cert bypass. Not for public networks. -->
 	<application
+		android:name=".App"
 		android:allowBackup="false"
 		android:dataExtractionRules="@xml/data_extraction_rules"
 		android:fullBackupContent="false"
