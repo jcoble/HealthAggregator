@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.healthaggregator.data.AppDatabase
 import com.healthaggregator.data.MIGRATION_1_2
+import com.healthaggregator.data.MIGRATION_2_3
 import com.healthaggregator.data.dao.*
 import dagger.Module
 import dagger.Provides
@@ -20,7 +21,7 @@ object DatabaseModule {
 	@Singleton
 	fun provideDatabase(@ApplicationContext ctx: Context): AppDatabase =
 		Room.databaseBuilder(ctx, AppDatabase::class.java, "healthaggregator.db")
-			.addMigrations(MIGRATION_1_2)
+			.addMigrations(MIGRATION_1_2, MIGRATION_2_3)
 			.build()
 
 	@Provides fun providePatientDao(db: AppDatabase): PatientDao = db.patientDao()

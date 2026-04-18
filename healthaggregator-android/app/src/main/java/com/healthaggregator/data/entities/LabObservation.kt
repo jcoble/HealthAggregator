@@ -11,6 +11,8 @@ import java.time.Instant
 		Index(value = ["sourceSystem", "fhirReference"], unique = true),
 		Index(value = ["loincCode", "effectiveAt"]),
 		Index(value = ["serviceRequestReference"]),
+		Index(value = ["canonicalPanelName"]),
+		Index(value = ["canonicalTestName"]),
 	],
 )
 data class LabObservation(
@@ -35,4 +37,6 @@ data class LabObservation(
 	val importedAt: Instant,
 	val serviceRequestReference: String? = null,
 	val serviceRequestDisplay: String? = null,
+	val canonicalPanelName: String? = null,
+	val canonicalTestName: String? = null,
 )
