@@ -3,6 +3,9 @@ package com.healthaggregator.ui.records
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.healthaggregator.data.LabPanelAggregate
+import com.healthaggregator.ui.components.SortOrder
+import com.healthaggregator.ui.components.toggled
 import com.healthaggregator.data.entities.AllergyRecord
 import com.healthaggregator.data.entities.ConditionRecord
 import com.healthaggregator.data.entities.DocumentRecord
@@ -59,6 +62,29 @@ class RecordsViewModel @Inject constructor(
 	private val _filter = MutableStateFlow(FilterType.fromNavKey(savedState.get<String>("type")))
 	val filter = _filter.asStateFlow()
 
+	private val _query = MutableStateFlow("")
+	val query = _query.asStateFlow()
+
+	private val _sort = MutableStateFlow(SortOrder.NEWEST_FIRST)
+	val sort = _sort.asStateFlow()
+
+	private val panelRowsFlow: Flow<List<LabPanelAggregate>> = records.observePanels()
+
+	private val abnormalServiceRequestsFlow: Flow<Set<String>> = records.observeLabs().map { list ->
+		list.filter { isAbnormal(it) && it.serviceRequestReference != null }
+			.map { it.serviceRequestReference!! }
+			.toSet()
+	}
+
+	data class LabsUiState(val panels: List<LabPanelAggregate>, val abnormalSrs: Set<String>)
+
+	val labsState: StateFlow<LabsUiState> =
+		combine(panelRowsFlow, abnormalServiceRequestsFlow) { panels, abn -> LabsUiState(panels, abn) }
+			.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), LabsUiState(emptyList(), emptySet()))
+
+	fun setQuery(q: String) { _query.value = q }
+	fun toggleSort() { _sort.value = _sort.value.toggled() }
+
 	private val labRowsFlow = records.observeLabs().map { list -> list.map { it.toRow() } }
 	private val vitalRowsFlow = records.observeVitals().map { list -> list.map { it.toRow() } }
 	private val medRowsFlow = records.observeMedications().map { list -> list.map { it.toRow() } }
@@ -81,6 +107,13 @@ class RecordsViewModel @Inject constructor(
 			FilterType.ALLERGIES -> allergyRowsFlow
 			FilterType.ENCOUNTERS -> encounterRowsFlow
 			FilterType.DOCUMENTS -> documentRowsFlow
+		}
+	}.combine(_query) { rows, q ->
+		if (q.isBlank()) rows else rows.filter { it.title.contains(q, ignoreCase = true) || it.summary.contains(q, ignoreCase = true) }
+	}.combine(_sort) { rows, s ->
+		when (s) {
+			SortOrder.NEWEST_FIRST -> rows.sortedByDescending { it.effectiveAt ?: Instant.EPOCH }
+			SortOrder.OLDEST_FIRST -> rows.sortedBy { it.effectiveAt ?: Instant.EPOCH }
 		}
 	}.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 

@@ -2,16 +2,14 @@ package com.healthaggregator.ui.records
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Assignment
 import androidx.compose.material.icons.outlined.Biotech
-import androidx.compose.material.icons.outlined.EventNote
 import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.Healing
 import androidx.compose.material.icons.outlined.LocalHospital
@@ -25,16 +23,18 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.healthaggregator.ui.components.EmptyState
 import com.healthaggregator.ui.components.FilterChipRow
 import com.healthaggregator.ui.components.RecordRow
-import com.healthaggregator.ui.theme.HealthAggregatorTheme
+import com.healthaggregator.ui.components.SearchBar
+import com.healthaggregator.ui.components.SortChip
+import com.healthaggregator.ui.components.SortOrder
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,10 +45,20 @@ fun RecordsScreen(
 	viewModel: RecordsViewModel = hiltViewModel(),
 ) {
 	val filter by viewModel.filter.collectAsStateWithLifecycle()
+	val query by viewModel.query.collectAsStateWithLifecycle()
+	val sort by viewModel.sort.collectAsStateWithLifecycle()
 	val rows by viewModel.rows.collectAsStateWithLifecycle()
+	val labsState by viewModel.labsState.collectAsStateWithLifecycle()
 
 	Column(modifier = Modifier.fillMaxSize()) {
 		TopAppBar(title = { Text("Records") })
+
+		SearchBar(query = query, onQueryChange = viewModel::setQuery)
+
+		Row(modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+			SortChip(order = sort, onToggle = viewModel::toggleSort)
+		}
+
 		FilterChipRow(
 			options = FilterType.entries,
 			selected = filter,
@@ -58,27 +68,50 @@ fun RecordsScreen(
 		)
 		HorizontalDivider()
 
-		if (rows.isEmpty()) {
-			val (icon, title, description) = emptyStateFor(filter)
-			EmptyState(
-				icon = icon,
-				title = title,
-				description = description,
-				actionLabel = "Refresh",
-				onAction = viewModel::refresh,
-			)
+		if (filter == FilterType.LABS) {
+			val filtered = labsState.panels
+				.let { panels ->
+					if (query.isBlank()) panels else panels.filter { it.displayName.contains(query, ignoreCase = true) }
+				}
+				.let { panels ->
+					when (sort) {
+						SortOrder.NEWEST_FIRST -> panels
+						SortOrder.OLDEST_FIRST -> panels.reversed()
+					}
+				}
+			if (filtered.isEmpty()) {
+				val (icon, title, description) = emptyStateFor(filter)
+				EmptyState(icon, title, description, actionLabel = "Refresh", onAction = viewModel::refresh)
+			} else {
+				LazyColumn(contentPadding = PaddingValues(vertical = 4.dp)) {
+					items(filtered, key = { it.serviceRequestReference }) { panel ->
+						LabPanelRow(
+							panel = panel,
+							abnormal = labsState.abnormalSrs.contains(panel.serviceRequestReference),
+							onClick = { onOpenPanel(panel.serviceRequestReference) },
+						)
+						HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+					}
+				}
+			}
 		} else {
-			LazyColumn(contentPadding = PaddingValues(vertical = 4.dp)) {
-				items(rows, key = { it.id }) { row ->
-					RecordRow(
-						icon = iconFor(row.kind),
-						title = row.title,
-						summary = row.summary,
-						sourceSystem = row.sourceSystem,
-						sourceName = row.sourceName,
-						trailingText = row.trailingText,
-					)
-					HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+			if (rows.isEmpty()) {
+				val (icon, title, description) = emptyStateFor(filter)
+				EmptyState(icon, title, description, actionLabel = "Refresh", onAction = viewModel::refresh)
+			} else {
+				LazyColumn(contentPadding = PaddingValues(vertical = 4.dp)) {
+					items(rows, key = { it.id }) { row ->
+						RecordRow(
+							icon = iconFor(row.kind),
+							title = row.title,
+							summary = row.summary,
+							sourceSystem = row.sourceSystem,
+							sourceName = row.sourceName,
+							trailingText = row.trailingText,
+							onClick = { onOpenRecord(row.sourceSystem, row.fhirReference) },
+						)
+						HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+					}
 				}
 			}
 		}
@@ -104,16 +137,4 @@ private fun emptyStateFor(filter: FilterType): Triple<ImageVector, String, Strin
 	FilterType.ALLERGIES -> Triple(Icons.Outlined.Biotech, "No allergies", "Allergy records appear here.")
 	FilterType.ENCOUNTERS -> Triple(Icons.Outlined.LocalHospital, "No encounters", "Visits and appointments appear here.")
 	FilterType.DOCUMENTS -> Triple(Icons.Outlined.Assignment, "No documents", "Attached documents appear here.")
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Preview(showBackground = true, backgroundColor = 0xFF09090B, heightDp = 720)
-@Composable
-private fun PreviewEmpty() = HealthAggregatorTheme {
-	Column(modifier = Modifier.fillMaxSize()) {
-		TopAppBar(title = { Text("Records") })
-		FilterChipRow(options = FilterType.entries, selected = FilterType.LABS, onSelect = {}, label = { it.chipLabel })
-		Spacer(Modifier.height(8.dp))
-		EmptyState(Icons.Outlined.Science, "No lab results", "Labs appear here once CommonHealth pulls them in.", actionLabel = "Refresh", onAction = {})
-	}
 }
