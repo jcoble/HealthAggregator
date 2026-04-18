@@ -23,6 +23,12 @@ interface VitalsDao {
 	@Query("SELECT COUNT(*) FROM vitals_observations")
 	fun countAll(): Flow<Int>
 
+	@Insert(onConflict = OnConflictStrategy.REPLACE)
+	suspend fun upsert(vital: VitalsObservation)
+
+	@Query("SELECT * FROM vitals_observations")
+	suspend fun getAllSnapshot(): List<VitalsObservation>
+
 	@Query("DELETE FROM vitals_observations")
 	suspend fun deleteAll()
 }
