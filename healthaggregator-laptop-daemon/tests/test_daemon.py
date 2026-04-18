@@ -124,3 +124,56 @@ def test_pull_returns_rows_for_existing_table(tmp_data_dir) -> None:
     body = r.json()
     assert "patients" in body["rows_by_table"]
     assert body["rows_by_table"]["patients"][0]["fhirId"] == "Patient/99"
+
+
+def test_migrate_applies_sql_and_bumps_user_version(tmp_data_dir) -> None:
+    import sqlite3
+    from config import Config, load_or_create_token
+
+    cfg = Config.from_env()
+    with sqlite3.connect(cfg.db_path) as conn:
+        conn.execute("PRAGMA user_version = 4")
+    token = load_or_create_token(cfg.token_path)
+
+    from daemon import make_app
+    from fastapi.testclient import TestClient
+    client = TestClient(make_app())
+
+    payload = {
+        "from_version": 4,
+        "to_version": 5,
+        "sql": "CREATE TABLE demo_v5 (id INTEGER PRIMARY KEY);",
+    }
+    r = client.post(
+        "/sync/migrate",
+        json=payload,
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert r.status_code == 200, r.text
+
+    with sqlite3.connect(cfg.db_path) as conn:
+        (version,) = conn.execute("PRAGMA user_version").fetchone()
+        assert version == 5
+        tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+        assert "demo_v5" in tables
+
+
+def test_migrate_rejects_version_mismatch(tmp_data_dir) -> None:
+    import sqlite3
+    from config import Config, load_or_create_token
+
+    cfg = Config.from_env()
+    with sqlite3.connect(cfg.db_path) as conn:
+        conn.execute("PRAGMA user_version = 3")
+    token = load_or_create_token(cfg.token_path)
+
+    from daemon import make_app
+    from fastapi.testclient import TestClient
+    client = TestClient(make_app())
+
+    r = client.post(
+        "/sync/migrate",
+        json={"from_version": 5, "to_version": 6, "sql": "SELECT 1;"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert r.status_code == 409

@@ -76,6 +76,26 @@ def make_app() -> FastAPI:
         from row_io import read_all_rows
         return {"rows_by_table": read_all_rows(cfg.db_path)}
 
+    @app.post("/sync/migrate", dependencies=[Depends(require_token)])
+    def migrate(payload: dict) -> dict:
+        from schema import SchemaMismatch, apply_migration
+
+        try:
+            apply_migration(
+                cfg.db_path,
+                from_version=int(payload["from_version"]),
+                to_version=int(payload["to_version"]),
+                sql=str(payload["sql"]),
+            )
+        except SchemaMismatch as e:
+            raise HTTPException(status_code=409, detail=str(e))
+        except sqlite3.Error as e:
+            raise HTTPException(status_code=500, detail=f"sql_error: {e}")
+
+        return {
+            "applied": [{"from": int(payload["from_version"]), "to": int(payload["to_version"])}]
+        }
+
     return app
 
 
