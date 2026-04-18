@@ -35,7 +35,7 @@ fun AppNavHost(navController: NavHostController, onRequestPermissions: () -> Uni
 			com.healthaggregator.ui.records.RecordsScreen()
 		}
 		composable(TopLevelRoute.SETTINGS.route) {
-			PlaceholderScreen("Settings") // Task 22 replaces
+			com.healthaggregator.ui.settings.SettingsScreen(onRequestPermissions = onRequestPermissions)
 		}
 	}
 }

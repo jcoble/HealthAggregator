@@ -32,4 +32,7 @@ interface MedicalDataSourceDao {
 
 	@Query("UPDATE medical_data_sources SET lastSeenAt = :lastSeenAt, recordCount = :recordCount WHERE id = :id")
 	suspend fun touchLastSeen(id: Long, lastSeenAt: Instant, recordCount: Int)
+
+	@Query("UPDATE medical_data_sources SET displayName = :displayName WHERE id = :id")
+	suspend fun updateDisplayName(id: Long, displayName: String)
 }
