@@ -17,6 +17,9 @@ interface LabDao {
 	@Insert(onConflict = OnConflictStrategy.REPLACE)
 	suspend fun upsertAll(labs: List<LabObservation>)
 
+	@Insert(onConflict = OnConflictStrategy.IGNORE)
+	suspend fun insertAllIgnore(rows: List<LabObservation>): List<Long>
+
 	@Insert(onConflict = OnConflictStrategy.REPLACE)
 	suspend fun upsert(lab: LabObservation)
 

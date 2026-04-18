@@ -20,6 +20,9 @@ interface ChatDao {
 	@Insert(onConflict = OnConflictStrategy.REPLACE)
 	suspend fun upsertMessages(messages: List<ChatMessage>)
 
+	@Insert(onConflict = OnConflictStrategy.IGNORE)
+	suspend fun insertMessagesIgnore(rows: List<ChatMessage>): List<Long>
+
 	@Query("SELECT * FROM chat_conversations ORDER BY updatedAt DESC")
 	fun observeConversations(): Flow<List<ChatConversation>>
 
@@ -46,6 +49,12 @@ interface ChatDao {
 
 	@Query("DELETE FROM chat_conversations WHERE id = :id")
 	suspend fun deleteConversation(id: String)
+
+	@Query("SELECT * FROM chat_conversations")
+	suspend fun getAllConversationsSnapshot(): List<ChatConversation>
+
+	@Query("SELECT * FROM chat_messages")
+	suspend fun getAllMessagesSnapshot(): List<ChatMessage>
 
 	@Query("DELETE FROM chat_conversations")
 	suspend fun deleteAllConversations()

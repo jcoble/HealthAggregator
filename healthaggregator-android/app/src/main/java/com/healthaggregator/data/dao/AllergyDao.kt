@@ -14,6 +14,9 @@ interface AllergyDao {
 	@Insert(onConflict = OnConflictStrategy.REPLACE)
 	suspend fun upsertAll(items: List<AllergyRecord>)
 
+	@Insert(onConflict = OnConflictStrategy.IGNORE)
+	suspend fun insertAllIgnore(rows: List<AllergyRecord>): List<Long>
+
 	@Insert(onConflict = OnConflictStrategy.REPLACE)
 	suspend fun upsert(item: AllergyRecord)
 

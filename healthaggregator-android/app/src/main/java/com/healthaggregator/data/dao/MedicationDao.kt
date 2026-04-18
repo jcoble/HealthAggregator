@@ -14,6 +14,9 @@ interface MedicationDao {
 	@Insert(onConflict = OnConflictStrategy.REPLACE)
 	suspend fun upsertAll(items: List<MedicationRecord>)
 
+	@Insert(onConflict = OnConflictStrategy.IGNORE)
+	suspend fun insertAllIgnore(rows: List<MedicationRecord>): List<Long>
+
 	@Insert(onConflict = OnConflictStrategy.REPLACE)
 	suspend fun upsert(item: MedicationRecord)
 

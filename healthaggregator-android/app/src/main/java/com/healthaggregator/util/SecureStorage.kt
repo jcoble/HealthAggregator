@@ -35,7 +35,30 @@ class SecureStorage @Inject constructor(@ApplicationContext ctx: Context) {
 		get() = prefs.getBoolean(KEY_DISCLAIMER, false)
 		set(value) = prefs.edit().putBoolean(KEY_DISCLAIMER, value).apply()
 
+	var laptopHostname: String?
+		get() = prefs.getString(KEY_LAPTOP_HOSTNAME, null)?.ifEmpty { null }
+		set(value) = prefs.edit().run { if (value.isNullOrBlank()) remove(KEY_LAPTOP_HOSTNAME) else putString(KEY_LAPTOP_HOSTNAME, value); apply() }
+
+	var laptopToken: String?
+		get() = prefs.getString(KEY_LAPTOP_TOKEN, null)?.ifEmpty { null }
+		set(value) = prefs.edit().run { if (value.isNullOrBlank()) remove(KEY_LAPTOP_TOKEN) else putString(KEY_LAPTOP_TOKEN, value); apply() }
+
+	var lastSyncAt: Long
+		get() = prefs.getLong(KEY_LAST_SYNC_AT, 0L)
+		set(value) = prefs.edit().putLong(KEY_LAST_SYNC_AT, value).apply()
+
+	var lastSyncSummary: String?
+		get() = prefs.getString(KEY_LAST_SYNC_SUMMARY, null)
+		set(value) = prefs.edit().run { if (value.isNullOrBlank()) remove(KEY_LAST_SYNC_SUMMARY) else putString(KEY_LAST_SYNC_SUMMARY, value); apply() }
+
 	fun clearApiKey() { openAiApiKey = null }
+
+	fun clearLaptopPairing() {
+		laptopHostname = null
+		laptopToken = null
+		lastSyncAt = 0L
+		lastSyncSummary = null
+	}
 
 	companion object {
 		private const val FILE_NAME = "healthaggregator_secure"
@@ -43,6 +66,10 @@ class SecureStorage @Inject constructor(@ApplicationContext ctx: Context) {
 		private const val KEY_DATA_SHARING = "data_sharing_enabled"
 		private const val KEY_SELECTED_MODEL = "selected_model"
 		private const val KEY_DISCLAIMER = "disclaimer_acknowledged"
+		private const val KEY_LAPTOP_HOSTNAME = "laptop_hostname"
+		private const val KEY_LAPTOP_TOKEN = "laptop_token"
+		private const val KEY_LAST_SYNC_AT = "last_sync_at"
+		private const val KEY_LAST_SYNC_SUMMARY = "last_sync_summary"
 		const val DEFAULT_MODEL = "gpt-5"
 
 		val ELIGIBLE_FREE_TIER_MODELS = setOf("gpt-5", "gpt-5-mini", "gpt-5-nano")

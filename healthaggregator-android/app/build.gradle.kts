@@ -106,6 +106,9 @@ dependencies {
 	testImplementation(libs.androidx.room.testing)
 	testImplementation(libs.kotlinx.coroutines)
 
+	// Reflection support (used by RowSerializer.toRow)
+	implementation(kotlin("reflect"))
+
 	// DAO tests — JUnit 4 + Robolectric + vintage bridge
 	testImplementation("junit:junit:4.13.2")
 	testRuntimeOnly("org.junit.vintage:junit-vintage-engine:5.11.3")

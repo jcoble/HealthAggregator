@@ -3,10 +3,8 @@ package com.healthaggregator.di
 import android.content.Context
 import androidx.room.Room
 import com.healthaggregator.data.AppDatabase
-import com.healthaggregator.data.MIGRATION_1_2
-import com.healthaggregator.data.MIGRATION_2_3
-import com.healthaggregator.data.MIGRATION_3_4
-import com.healthaggregator.data.MIGRATION_4_5
+import com.healthaggregator.data.MigrationFactory
+import com.healthaggregator.data.allMigrations
 import com.healthaggregator.data.dao.*
 import dagger.Module
 import dagger.Provides
@@ -21,9 +19,12 @@ object DatabaseModule {
 
 	@Provides
 	@Singleton
-	fun provideDatabase(@ApplicationContext ctx: Context): AppDatabase =
+	fun provideDatabase(
+		@ApplicationContext ctx: Context,
+		factory: MigrationFactory,
+	): AppDatabase =
 		Room.databaseBuilder(ctx, AppDatabase::class.java, "healthaggregator.db")
-			.addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+			.addMigrations(*allMigrations(factory))
 			.build()
 
 	@Provides fun providePatientDao(db: AppDatabase): PatientDao = db.patientDao()
