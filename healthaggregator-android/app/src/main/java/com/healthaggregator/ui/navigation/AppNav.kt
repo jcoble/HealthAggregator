@@ -7,8 +7,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import com.healthaggregator.ui.home.HomeScreen
 
 @Composable
@@ -25,9 +27,12 @@ fun AppNavHost(navController: NavHostController, onRequestPermissions: () -> Uni
 				onRequestPermissions = onRequestPermissions,
 			)
 		}
-		composable("${TopLevelRoute.RECORDS.route}?type={type}") { backStackEntry ->
-			val type = backStackEntry.arguments?.getString("type") ?: "all"
-			PlaceholderScreen("Records (type=$type)") // Task 21 replaces
+		composable(
+			route = "${TopLevelRoute.RECORDS.route}?type={type}",
+			arguments = listOf(navArgument("type") { type = NavType.StringType; nullable = true; defaultValue = null }),
+		) {
+			// Nav arg 'type' is read by RecordsViewModel via SavedStateHandle automatically
+			com.healthaggregator.ui.records.RecordsScreen()
 		}
 		composable(TopLevelRoute.SETTINGS.route) {
 			PlaceholderScreen("Settings") // Task 22 replaces
