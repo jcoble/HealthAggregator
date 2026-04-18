@@ -68,23 +68,26 @@ val MIGRATION_3_4: Migration = object : Migration(3, 4) {
  */
 val MIGRATION_4_5: Migration = object : Migration(4, 5) {
 	override fun migrate(db: SupportSQLiteDatabase) {
+		// DDL must match Room's expected v5 schema exactly — explicit NOT NULL on the PK, no
+		// SQL DEFAULT on componentCode (Room handles the Kotlin default in the generated insert,
+		// not in the column definition). Room's TableInfo validator rejects any mismatch.
 		db.execSQL(
 			"""
 			CREATE TABLE IF NOT EXISTS vitals_observations_new (
-				id INTEGER PRIMARY KEY AUTOINCREMENT,
-				sourceSystem TEXT NOT NULL,
-				sourceName TEXT NOT NULL,
-				fhirReference TEXT NOT NULL,
-				resourceId TEXT NOT NULL,
-				patientFhirId TEXT,
-				loincCode TEXT,
-				code TEXT NOT NULL,
-				displayName TEXT NOT NULL,
-				numericValue REAL,
-				unit TEXT,
-				componentCode TEXT NOT NULL DEFAULT '',
-				effectiveAt INTEGER,
-				importedAt INTEGER NOT NULL
+				`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+				`sourceSystem` TEXT NOT NULL,
+				`sourceName` TEXT NOT NULL,
+				`fhirReference` TEXT NOT NULL,
+				`resourceId` TEXT NOT NULL,
+				`patientFhirId` TEXT,
+				`loincCode` TEXT,
+				`code` TEXT NOT NULL,
+				`displayName` TEXT NOT NULL,
+				`numericValue` REAL,
+				`unit` TEXT,
+				`componentCode` TEXT NOT NULL,
+				`effectiveAt` INTEGER,
+				`importedAt` INTEGER NOT NULL
 			)
 			""".trimIndent()
 		)
