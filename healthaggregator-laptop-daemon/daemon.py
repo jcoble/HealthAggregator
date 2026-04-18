@@ -51,6 +51,26 @@ def make_app() -> FastAPI:
             "daemon_version": cfg.daemon_version,
         }
 
+    @app.post("/sync/push", dependencies=[Depends(require_token)])
+    def push(payload: dict) -> dict:
+        from sync_logic import merge_rows, natural_key_for, strategy_for
+
+        rows_by_table = payload.get("rows_by_table", {})
+        inserted: dict[str, int] = {}
+        ignored: dict[str, int] = {}
+        with sqlite3.connect(cfg.db_path) as conn:
+            for table_name, rows in rows_by_table.items():
+                i, ig = merge_rows(
+                    conn,
+                    table_name,
+                    list(rows),
+                    strategy_for(table_name),
+                    natural_key_for(table_name),
+                )
+                inserted[table_name] = i
+                ignored[table_name] = ig
+        return {"inserted_by_table": inserted, "ignored_by_table": ignored}
+
     return app
 
 
