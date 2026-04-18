@@ -9,7 +9,8 @@
 	<uses-permission android:name="android.permission.health.READ_MEDICAL_DATA_CONDITIONS" />
 	<uses-permission android:name="android.permission.health.READ_MEDICAL_DATA_LABORATORY_RESULTS" />
 	<uses-permission android:name="android.permission.health.READ_MEDICAL_DATA_MEDICATIONS" />
-	<uses-permission android:name="android.permission.health.READ_MEDICAL_DATA_PATIENT_DEMOGRAPHICS" />
+	<uses-permission android:name="android.permission.health.READ_MEDICAL_DATA_PERSONAL_DETAILS" />
+	<uses-permission android:name="android.permission.health.READ_MEDICAL_DATA_PRACTITIONER_DETAILS" />
 	<uses-permission android:name="android.permission.health.READ_MEDICAL_DATA_PREGNANCY" />
 	<uses-permission android:name="android.permission.health.READ_MEDICAL_DATA_PROCEDURES" />
 	<uses-permission android:name="android.permission.health.READ_MEDICAL_DATA_SOCIAL_HISTORY" />
