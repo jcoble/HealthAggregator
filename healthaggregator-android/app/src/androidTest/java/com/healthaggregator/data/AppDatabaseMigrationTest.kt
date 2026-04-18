@@ -23,7 +23,7 @@ class AppDatabaseMigrationTest {
 	)
 
 	private val factory by lazy {
-		MigrationFactory(InstrumentationRegistry.getInstrumentation().context)
+		MigrationFactory(InstrumentationRegistry.getInstrumentation().targetContext)
 	}
 
 	@Test
