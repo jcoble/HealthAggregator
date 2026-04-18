@@ -16,4 +16,5 @@ fun allMigrations(factory: MigrationFactory): Array<Migration> = arrayOf(
 	factory.load(2, 3),
 	factory.load(3, 4),
 	factory.load(4, 5),
+	factory.load(5, 6),
 )
