@@ -28,6 +28,10 @@ class FhirImportService @Inject constructor(
 ) {
 	private val json = Json { ignoreUnknownKeys = true; isLenient = true }
 
+	private companion object {
+		val SUPPRESSED_RESOURCE_TYPES = setOf("Condition")
+	}
+
 	/**
 	 * Imports a list of FHIR JSON resources (as raw strings) under a single (sourceSystem, sourceName),
 	 * within one Room withTransaction block. Returns counts per typed table.
@@ -47,6 +51,11 @@ class FhirImportService @Inject constructor(
 				val resourceType = root["resourceType"]?.jsonPrimitive?.contentOrNull ?: continue
 				val resourceId = root["id"]?.jsonPrimitive?.contentOrNull ?: continue
 				val fhirReference = "$resourceType/$resourceId"
+
+				// User-suppressed resource types are dropped entirely — no typed row, no raw
+				// source_records blob, no count. Condition is excluded so it can't influence
+				// diagnosis reasoning through any code path, including raw FHIR searches.
+				if (resourceType in SUPPRESSED_RESOURCE_TYPES) continue
 
 				// 1. Always upsert SourceRecord as raw backup
 				db.sourceRecordDao().upsert(SourceRecord(
@@ -91,11 +100,6 @@ class FhirImportService @Inject constructor(
 					"DiagnosticReport" -> {
 						db.diagnosticReportDao().upsert(buildDiagnosticReport(sourceSystem, sourceName, root, resourceId, fhirReference, now))
 						counts.reports++
-					}
-					"Condition" -> {
-						// Intentionally dropped. User does not want Condition resources influencing
-						// diagnosis reasoning; Conditions were wiped in migration 6→7 and nothing
-						// feeds the table anymore. Source_records still stores the raw FHIR blob.
 					}
 					"MedicationRequest", "MedicationStatement", "Medication" -> {
 						db.medicationDao().upsert(buildMedication(sourceSystem, sourceName, root, resourceType, resourceId, fhirReference, now))

@@ -20,7 +20,7 @@ class SyncRepository @Inject constructor(
 	private val db: AppDatabase,
 	private val serializer: RowSerializer,
 	private val migrationLoader: MigrationLoader,
-	private val phoneSchemaVersion: Int = 7,
+	private val phoneSchemaVersion: Int = 8,
 	private val isPairedProvider: () -> Boolean,
 ) {
 	suspend fun syncNow(): Result<SyncResult> = runCatching {
