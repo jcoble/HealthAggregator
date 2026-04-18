@@ -31,6 +31,7 @@ fun LabPanelRow(
 	abnormal: Boolean,
 	onClick: () -> Unit,
 	modifier: Modifier = Modifier,
+	matchedLabs: List<String> = emptyList(),
 ) {
 	Row(
 		modifier = modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 12.dp),
@@ -50,6 +51,14 @@ fun LabPanelRow(
 				style = MaterialTheme.typography.bodySmall,
 				color = MaterialTheme.colorScheme.secondary,
 			)
+			if (matchedLabs.isNotEmpty()) {
+				Spacer(Modifier.size(2.dp))
+				Text(
+					text = "Matches: " + matchedLabs.joinToString(", "),
+					style = MaterialTheme.typography.bodySmall,
+					color = MaterialTheme.colorScheme.primary,
+				)
+			}
 			Spacer(Modifier.size(4.dp))
 			SourceBadge(sourceSystem = panel.sourceSystem, sourceName = panel.sourceName)
 		}

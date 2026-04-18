@@ -69,16 +69,10 @@ fun RecordsScreen(
 		HorizontalDivider()
 
 		if (filter == FilterType.LABS) {
-			val filtered = labsState.panels
-				.let { panels ->
-					if (query.isBlank()) panels else panels.filter { it.displayName.contains(query, ignoreCase = true) }
-				}
-				.let { panels ->
-					when (sort) {
-						SortOrder.NEWEST_FIRST -> panels
-						SortOrder.OLDEST_FIRST -> panels.reversed()
-					}
-				}
+			val filtered = when (sort) {
+				SortOrder.NEWEST_FIRST -> labsState.panels
+				SortOrder.OLDEST_FIRST -> labsState.panels.reversed()
+			}
 			if (filtered.isEmpty()) {
 				val (icon, title, description) = emptyStateFor(filter)
 				EmptyState(icon, title, description, actionLabel = "Refresh", onAction = viewModel::refresh)
@@ -88,6 +82,7 @@ fun RecordsScreen(
 						LabPanelRow(
 							panel = panel,
 							abnormal = labsState.abnormalSrs.contains(panel.serviceRequestReference),
+							matchedLabs = labsState.matchedLabsBySr[panel.serviceRequestReference].orEmpty(),
 							onClick = { onOpenPanel(panel.serviceRequestReference) },
 						)
 						HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))

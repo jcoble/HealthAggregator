@@ -70,17 +70,40 @@ class RecordsViewModel @Inject constructor(
 
 	private val panelRowsFlow: Flow<List<LabPanelAggregate>> = records.observePanels()
 
-	private val abnormalServiceRequestsFlow: Flow<Set<String>> = records.observeLabs().map { list ->
+	private val allLabsFlow: Flow<List<LabObservation>> = records.observeLabs()
+
+	private val abnormalServiceRequestsFlow: Flow<Set<String>> = allLabsFlow.map { list ->
 		list.filter { isAbnormal(it) && it.serviceRequestReference != null }
 			.map { it.serviceRequestReference!! }
 			.toSet()
 	}
 
-	data class LabsUiState(val panels: List<LabPanelAggregate>, val abnormalSrs: Set<String>)
+	data class LabsUiState(
+		val panels: List<LabPanelAggregate>,
+		val abnormalSrs: Set<String>,
+		val matchedLabsBySr: Map<String, List<String>> = emptyMap(),
+	)
 
 	val labsState: StateFlow<LabsUiState> =
-		combine(panelRowsFlow, abnormalServiceRequestsFlow) { panels, abn -> LabsUiState(panels, abn) }
-			.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), LabsUiState(emptyList(), emptySet()))
+		combine(panelRowsFlow, abnormalServiceRequestsFlow, allLabsFlow, _query) { panels, abn, labs, q ->
+			if (q.isBlank()) {
+				LabsUiState(panels, abn)
+			} else {
+				val matched: Map<String, List<String>> = labs
+					.asSequence()
+					.filter { it.serviceRequestReference != null }
+					.filter {
+						it.testName.contains(q, ignoreCase = true) ||
+							(it.canonicalTestName?.contains(q, ignoreCase = true) == true)
+					}
+					.groupBy { it.serviceRequestReference!! }
+					.mapValues { (_, rows) -> rows.map { it.testName }.distinct().take(MAX_MATCHED_LAB_HINTS) }
+				val filtered = panels.filter { panel ->
+					panel.displayName.contains(q, ignoreCase = true) || matched.containsKey(panel.serviceRequestReference)
+				}
+				LabsUiState(filtered, abn, matched)
+			}
+		}.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), LabsUiState(emptyList(), emptySet()))
 
 	fun setQuery(q: String) { _query.value = q }
 	fun toggleSort() { _sort.value = _sort.value.toggled() }
@@ -121,6 +144,10 @@ class RecordsViewModel @Inject constructor(
 
 	fun refresh() {
 		viewModelScope.launch { sync.sync() }
+	}
+
+	companion object {
+		private const val MAX_MATCHED_LAB_HINTS = 3
 	}
 }
 
