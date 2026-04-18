@@ -51,5 +51,5 @@ class RecordsRepository @Inject constructor(
 	fun countEncounters(): Flow<Int> = encounters.countAll()
 	fun countDocuments(): Flow<Int> = documents.countAll()
 
-	suspend fun latestSync(): SyncJob? = syncJobs.latest()
+	fun observeLatestSync(): Flow<SyncJob?> = syncJobs.observeLatest()
 }

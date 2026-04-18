@@ -19,6 +19,9 @@ interface SyncJobDao {
 	@Query("SELECT * FROM sync_jobs ORDER BY startedAt DESC LIMIT 1")
 	suspend fun latest(): SyncJob?
 
+	@Query("SELECT * FROM sync_jobs ORDER BY startedAt DESC LIMIT 1")
+	fun observeLatest(): Flow<SyncJob?>
+
 	@Query("SELECT * FROM sync_jobs ORDER BY startedAt DESC LIMIT :limit")
 	fun observeRecent(limit: Int): Flow<List<SyncJob>>
 
