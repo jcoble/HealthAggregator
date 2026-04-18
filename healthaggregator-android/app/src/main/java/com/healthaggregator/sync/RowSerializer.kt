@@ -1,8 +1,16 @@
 package com.healthaggregator.sync
 
+import com.healthaggregator.data.entities.AllergyRecord
 import com.healthaggregator.data.entities.ChatConversation
 import com.healthaggregator.data.entities.ChatMessage
+import com.healthaggregator.data.entities.ConditionRecord
+import com.healthaggregator.data.entities.DiagnosticReportRecord
+import com.healthaggregator.data.entities.DocumentRecord
+import com.healthaggregator.data.entities.EncounterRecord
 import com.healthaggregator.data.entities.LabObservation
+import com.healthaggregator.data.entities.MedicationRecord
+import com.healthaggregator.data.entities.PatientRecord
+import com.healthaggregator.data.entities.SourceRecord
 import com.healthaggregator.data.entities.VitalsObservation
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
@@ -59,6 +67,9 @@ class RowSerializer @Inject constructor() {
 
 	private fun JsonObject.strReq(name: String): String =
 		str(name) ?: error("missing non-null String field '$name' in row")
+
+	private fun JsonObject.longReq(name: String): Long =
+		long(name) ?: error("missing non-null Long field '$name' in row")
 
 	private fun JsonObject.long(name: String): Long? {
 		val el = get(name) ?: return null
@@ -143,5 +154,108 @@ class RowSerializer @Inject constructor() {
 		toolCallId = r.str("toolCallId"),
 		modelId = r.str("modelId"),
 		createdAt = r.instant("createdAt") ?: Instant.EPOCH,
+	)
+
+	fun fromPatientRow(r: JsonObject) = PatientRecord(
+		id = r.long("id") ?: 0L,
+		sourceSystem = r.strReq("sourceSystem"),
+		fhirId = r.strReq("fhirId"),
+		displayName = r.str("displayName"),
+		birthDate = r.str("birthDate"),
+		updatedAt = r.instant("updatedAt") ?: Instant.EPOCH,
+	)
+
+	fun fromConditionRow(r: JsonObject) = ConditionRecord(
+		id = r.long("id") ?: 0L,
+		sourceSystem = r.strReq("sourceSystem"),
+		sourceName = r.strReq("sourceName"),
+		fhirReference = r.strReq("fhirReference"),
+		resourceId = r.strReq("resourceId"),
+		patientFhirId = r.str("patientFhirId"),
+		codeText = r.str("codeText"),
+		clinicalStatus = r.str("clinicalStatus"),
+		onsetAt = r.instant("onsetAt"),
+		recordedAt = r.instant("recordedAt"),
+		importedAt = r.instant("importedAt") ?: Instant.EPOCH,
+	)
+
+	fun fromMedicationRow(r: JsonObject) = MedicationRecord(
+		id = r.long("id") ?: 0L,
+		sourceSystem = r.strReq("sourceSystem"),
+		sourceName = r.strReq("sourceName"),
+		fhirReference = r.strReq("fhirReference"),
+		resourceId = r.strReq("resourceId"),
+		patientFhirId = r.str("patientFhirId"),
+		medicationText = r.str("medicationText"),
+		status = r.str("status"),
+		authoredAt = r.instant("authoredAt"),
+		importedAt = r.instant("importedAt") ?: Instant.EPOCH,
+	)
+
+	fun fromAllergyRow(r: JsonObject) = AllergyRecord(
+		id = r.long("id") ?: 0L,
+		sourceSystem = r.strReq("sourceSystem"),
+		sourceName = r.strReq("sourceName"),
+		fhirReference = r.strReq("fhirReference"),
+		resourceId = r.strReq("resourceId"),
+		patientFhirId = r.str("patientFhirId"),
+		allergyText = r.str("allergyText"),
+		clinicalStatus = r.str("clinicalStatus"),
+		recordedAt = r.instant("recordedAt"),
+		importedAt = r.instant("importedAt") ?: Instant.EPOCH,
+	)
+
+	fun fromEncounterRow(r: JsonObject) = EncounterRecord(
+		id = r.long("id") ?: 0L,
+		sourceSystem = r.strReq("sourceSystem"),
+		sourceName = r.strReq("sourceName"),
+		fhirReference = r.strReq("fhirReference"),
+		resourceId = r.strReq("resourceId"),
+		patientFhirId = r.str("patientFhirId"),
+		typeText = r.str("typeText"),
+		status = r.str("status"),
+		startedAt = r.instant("startedAt"),
+		endedAt = r.instant("endedAt"),
+		importedAt = r.instant("importedAt") ?: Instant.EPOCH,
+	)
+
+	fun fromDocumentRow(r: JsonObject) = DocumentRecord(
+		id = r.long("id") ?: 0L,
+		sourceSystem = r.strReq("sourceSystem"),
+		sourceName = r.strReq("sourceName"),
+		fhirReference = r.strReq("fhirReference"),
+		resourceId = r.strReq("resourceId"),
+		patientFhirId = r.str("patientFhirId"),
+		typeText = r.str("typeText"),
+		status = r.str("status"),
+		documentedAt = r.instant("documentedAt"),
+		contentUrl = r.str("contentUrl"),
+		importedAt = r.instant("importedAt") ?: Instant.EPOCH,
+	)
+
+	fun fromDiagnosticReportRow(r: JsonObject) = DiagnosticReportRecord(
+		id = r.long("id") ?: 0L,
+		sourceSystem = r.strReq("sourceSystem"),
+		sourceName = r.strReq("sourceName"),
+		fhirReference = r.strReq("fhirReference"),
+		resourceId = r.strReq("resourceId"),
+		patientFhirId = r.str("patientFhirId"),
+		codeText = r.str("codeText"),
+		status = r.str("status"),
+		issuedAt = r.instant("issuedAt"),
+		resultReferences = r.str("resultReferences"),
+		importedAt = r.instant("importedAt") ?: Instant.EPOCH,
+	)
+
+	fun fromSourceRecordRow(r: JsonObject) = SourceRecord(
+		id = r.long("id") ?: 0L,
+		syncJobId = r.long("syncJobId"),
+		sourceSystem = r.strReq("sourceSystem"),
+		sourceName = r.strReq("sourceName"),
+		resourceType = r.strReq("resourceType"),
+		resourceId = r.strReq("resourceId"),
+		fhirReference = r.strReq("fhirReference"),
+		rawJson = r.strReq("rawJson"),
+		importedAt = r.instant("importedAt") ?: Instant.EPOCH,
 	)
 }

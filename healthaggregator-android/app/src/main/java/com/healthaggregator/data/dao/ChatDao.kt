@@ -47,6 +47,12 @@ interface ChatDao {
 	@Query("DELETE FROM chat_conversations WHERE id = :id")
 	suspend fun deleteConversation(id: String)
 
+	@Query("SELECT * FROM chat_conversations")
+	suspend fun getAllConversationsSnapshot(): List<ChatConversation>
+
+	@Query("SELECT * FROM chat_messages")
+	suspend fun getAllMessagesSnapshot(): List<ChatMessage>
+
 	@Query("DELETE FROM chat_conversations")
 	suspend fun deleteAllConversations()
 }
