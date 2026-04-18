@@ -8,9 +8,17 @@ from __future__ import annotations
 import sqlite3
 from pathlib import Path
 
+import logging
+
 from fastapi import Depends, FastAPI, HTTPException, Request, status
 
 from config import Config, load_or_create_token
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(message)s",
+)
+log = logging.getLogger("healthaggregator.syncd")
 
 
 def _read_schema_version(db_path: Path) -> int:
@@ -27,6 +35,12 @@ def make_app() -> FastAPI:
     app = FastAPI(title="HealthAggregator Sync Daemon", version=cfg.daemon_version)
     app.state.config = cfg
     app.state.token = token
+
+    @app.middleware("http")
+    async def log_requests(request, call_next):
+        response = await call_next(request)
+        log.info("%s %s -> %d", request.method, request.url.path, response.status_code)
+        return response
 
     def require_token(request: Request) -> None:
         header = request.headers.get("authorization", "")
