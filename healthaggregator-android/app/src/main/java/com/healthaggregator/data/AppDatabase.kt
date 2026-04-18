@@ -4,6 +4,7 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.healthaggregator.data.dao.AllergyDao
+import com.healthaggregator.data.dao.ChatDao
 import com.healthaggregator.data.dao.ConditionDao
 import com.healthaggregator.data.dao.DiagnosticReportDao
 import com.healthaggregator.data.dao.DocumentDao
@@ -31,8 +32,10 @@ import com.healthaggregator.data.entities.*
 		SourceRecord::class,
 		SyncJob::class,
 		MedicalDataSource::class,
+		ChatConversation::class,
+		ChatMessage::class,
 	],
-	version = 3,
+	version = 4,
 	exportSchema = true,
 )
 @TypeConverters(Converters::class)
@@ -49,4 +52,5 @@ abstract class AppDatabase : RoomDatabase() {
 	abstract fun sourceRecordDao(): SourceRecordDao
 	abstract fun syncJobDao(): SyncJobDao
 	abstract fun medicalDataSourceDao(): MedicalDataSourceDao
+	abstract fun chatDao(): ChatDao
 }
