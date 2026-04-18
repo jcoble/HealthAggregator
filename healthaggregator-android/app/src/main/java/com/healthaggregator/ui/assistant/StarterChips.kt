@@ -1,6 +1,7 @@
 package com.healthaggregator.ui.assistant
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AssistChip
@@ -20,6 +21,7 @@ val DefaultStarterPrompts = listOf(
 	"What should I ask my doctor about?",
 )
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun StarterChips(
 	prompts: List<String> = DefaultStarterPrompts,
