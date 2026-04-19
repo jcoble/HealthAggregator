@@ -4,6 +4,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Chat
 import androidx.compose.material.icons.outlined.Dashboard
 import androidx.compose.material.icons.outlined.FolderShared
+import androidx.compose.material.icons.outlined.PictureAsPdf
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -21,6 +22,7 @@ enum class TopLevelRoute(val route: String, val label: String, val icon: ImageVe
 	HOME("home", "Home", Icons.Outlined.Dashboard),
 	RECORDS("records", "Records", Icons.Outlined.FolderShared),
 	ASSISTANT("assistant", "Assistant", Icons.Outlined.Chat),
+	EXPORT("export", "Export", Icons.Outlined.PictureAsPdf),
 	SETTINGS("settings", "Settings", Icons.Outlined.Settings),
 }
 

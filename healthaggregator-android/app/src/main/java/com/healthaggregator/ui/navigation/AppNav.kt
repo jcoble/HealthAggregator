@@ -7,6 +7,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.healthaggregator.ui.assistant.AssistantScreen
+import com.healthaggregator.ui.export.ExportScreen
 import com.healthaggregator.ui.home.HomeScreen
 import com.healthaggregator.ui.records.LabDetailScreen
 import com.healthaggregator.ui.records.PanelDetailScreen
@@ -55,6 +56,9 @@ fun AppNavHost(navController: NavHostController, onRequestPermissions: () -> Uni
 				},
 				onOpenSettings = { navController.navigate(TopLevelRoute.SETTINGS.route) },
 			)
+		}
+		composable(TopLevelRoute.EXPORT.route) {
+			ExportScreen()
 		}
 		composable(TopLevelRoute.SETTINGS.route) {
 			SettingsScreen(
