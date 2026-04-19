@@ -16,6 +16,7 @@ import com.healthaggregator.data.dao.PatientDao
 import com.healthaggregator.data.dao.SourceRecordDao
 import com.healthaggregator.data.dao.SourceSummaryDao
 import com.healthaggregator.data.dao.SyncJobDao
+import com.healthaggregator.data.dao.UserNarrativeDao
 import com.healthaggregator.data.dao.VitalsDao
 import com.healthaggregator.data.entities.*
 
@@ -35,8 +36,9 @@ import com.healthaggregator.data.entities.*
 		MedicalDataSource::class,
 		ChatConversation::class,
 		ChatMessage::class,
+		UserNarrative::class,
 	],
-	version = 8,
+	version = 9,
 	exportSchema = true,
 )
 @TypeConverters(Converters::class)
@@ -55,4 +57,5 @@ abstract class AppDatabase : RoomDatabase() {
 	abstract fun medicalDataSourceDao(): MedicalDataSourceDao
 	abstract fun sourceSummaryDao(): SourceSummaryDao
 	abstract fun chatDao(): ChatDao
+	abstract fun userNarrativeDao(): UserNarrativeDao
 }

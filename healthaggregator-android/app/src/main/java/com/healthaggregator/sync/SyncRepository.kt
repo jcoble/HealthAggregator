@@ -20,7 +20,7 @@ class SyncRepository @Inject constructor(
 	private val db: AppDatabase,
 	private val serializer: RowSerializer,
 	private val migrationLoader: MigrationLoader,
-	private val phoneSchemaVersion: Int = 8,
+	private val phoneSchemaVersion: Int = 9,
 	private val isPairedProvider: () -> Boolean,
 ) {
 	suspend fun syncNow(): Result<SyncResult> = runCatching {
@@ -70,6 +70,7 @@ class SyncRepository @Inject constructor(
 		rows[SyncableTable.SOURCE_RECORDS.tableName] = db.sourceRecordDao().getAllSnapshot().map { serializer.toRow(it) }
 		rows[SyncableTable.CHAT_CONVERSATIONS.tableName] = db.chatDao().getAllConversationsSnapshot().map { serializer.toRow(it) }
 		rows[SyncableTable.CHAT_MESSAGES.tableName] = db.chatDao().getAllMessagesSnapshot().map { serializer.toRow(it) }
+		rows[SyncableTable.USER_NARRATIVE.tableName] = db.userNarrativeDao().getAllSnapshot().map { serializer.toRow(it) }
 		return PushRequest(batch_id = UUID.randomUUID().toString(), rows_by_table = rows)
 	}
 
@@ -88,6 +89,7 @@ class SyncRepository @Inject constructor(
 				SyncableTable.SOURCE_RECORDS.tableName -> mergeSourceRecords(rows)
 				SyncableTable.CHAT_CONVERSATIONS.tableName -> mergeChatConversations(rows)
 				SyncableTable.CHAT_MESSAGES.tableName -> mergeChatMessages(rows)
+				SyncableTable.USER_NARRATIVE.tableName -> mergeUserNarrative(rows)
 				else -> 0
 			}
 		}
@@ -155,5 +157,17 @@ class SyncRepository @Inject constructor(
 	private suspend fun mergeChatMessages(rows: List<JsonObject>): Int {
 		val entities = rows.map { serializer.fromChatMessageRow(it) }
 		return db.chatDao().insertMessagesIgnore(entities).count { it != -1L }
+	}
+
+	private suspend fun mergeUserNarrative(rows: List<JsonObject>): Int {
+		if (rows.isEmpty()) return 0
+		val incoming = serializer.fromUserNarrativeRow(rows.first())
+		val existing = db.userNarrativeDao().getSnapshot()
+		return if (existing == null || incoming.updatedAt.isAfter(existing.updatedAt)) {
+			db.userNarrativeDao().upsert(incoming)
+			1
+		} else {
+			0
+		}
 	}
 }

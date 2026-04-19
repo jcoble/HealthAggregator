@@ -2,6 +2,7 @@ package com.healthaggregator.ai
 
 import com.healthaggregator.data.dao.AllergyDao
 import com.healthaggregator.data.dao.DocumentDao
+import com.healthaggregator.data.dao.UserNarrativeDao
 import com.healthaggregator.data.dao.LabDao
 import com.healthaggregator.data.dao.MedicationDao
 import com.healthaggregator.data.dao.VitalsDao
@@ -20,6 +21,7 @@ class HealthSnapshotBuilder @Inject constructor(
 	private val medications: MedicationDao,
 	private val allergies: AllergyDao,
 	private val documents: DocumentDao,
+	private val narrative: UserNarrativeDao,
 ) {
 	suspend fun build(now: Instant = Instant.now()): String {
 		val allLabs = labs.getAllSnapshot().sortedBy { it.effectiveAt }
@@ -27,6 +29,7 @@ class HealthSnapshotBuilder @Inject constructor(
 		val allMeds = medications.getAllSnapshot()
 		val allAllergies = allergies.getAllSnapshot()
 		val allDocs = documents.getAllSnapshot()
+		val narrativeText = narrative.getSnapshot()?.text?.trim().orEmpty()
 
 		val sources = (allLabs.map { it.sourceName } + allVitals.map { it.sourceName })
 			.toSortedSet()
@@ -43,6 +46,12 @@ class HealthSnapshotBuilder @Inject constructor(
 			appendLine("**Data span:** ${minDate ?: "n/a"} → ${maxDate ?: "n/a"}")
 			appendLine("**Sources:** $sources")
 			appendLine()
+			if (narrativeText.isNotBlank()) {
+				appendLine("## Patient-authored notes (treat as authoritative)")
+				appendLine()
+				appendLine(narrativeText)
+				appendLine()
+			}
 			appendLine("## Data-model caveats the LLM must know")
 			appendLine()
 			if (bpExists) {

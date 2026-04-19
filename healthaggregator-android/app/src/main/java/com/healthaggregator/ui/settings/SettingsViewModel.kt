@@ -6,7 +6,10 @@ import androidx.lifecycle.viewModelScope
 import com.healthaggregator.ai.AssistantRepository
 import com.healthaggregator.data.AppDatabase
 import com.healthaggregator.data.dao.MedicalDataSourceDao
+import com.healthaggregator.data.dao.UserNarrativeDao
 import com.healthaggregator.data.entities.MedicalDataSource
+import com.healthaggregator.data.entities.UserNarrative
+import java.time.Instant
 import com.healthaggregator.data.repository.RecordsRepository
 import com.healthaggregator.data.repository.SyncRepository
 import com.healthaggregator.sync.HealthConnectReader
@@ -23,6 +26,7 @@ data class SettingsUiState(
 	val sources: List<MedicalDataSource> = emptyList(),
 	val totalRecords: Int = 0,
 	val dbSizeBytes: Long = 0L,
+	val narrative: String = "",
 )
 
 @HiltViewModel
@@ -31,6 +35,7 @@ class SettingsViewModel @Inject constructor(
 	private val sync: SyncRepository,
 	private val reader: HealthConnectReader,
 	private val mdsDao: MedicalDataSourceDao,
+	private val narrativeDao: UserNarrativeDao,
 	private val db: AppDatabase,
 	@ApplicationContext private val context: Context,
 	val secureStorage: SecureStorage,
@@ -45,13 +50,15 @@ class SettingsViewModel @Inject constructor(
 		totalsFlow(),
 		_permission,
 		_dbSize,
-	) { sources, total, perm, size ->
+		narrativeDao.observe().map { it?.text.orEmpty() },
+	) { sources, total, perm, size, narrative ->
 		SettingsUiState(
 			healthConnectAvailable = reader.isAvailable(),
 			permissionsGranted = perm,
 			sources = sources,
 			totalRecords = total,
 			dbSizeBytes = size,
+			narrative = narrative,
 		)
 	}.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SettingsUiState())
 
@@ -83,6 +90,12 @@ class SettingsViewModel @Inject constructor(
 
 	fun clearChatHistory() {
 		viewModelScope.launch { assistantRepo.clearAllChatHistory() }
+	}
+
+	fun updateNarrative(text: String) {
+		viewModelScope.launch {
+			narrativeDao.upsert(UserNarrative(text = text, updatedAt = Instant.now()))
+		}
 	}
 
 	private fun totalsFlow(): Flow<Int> = combine(

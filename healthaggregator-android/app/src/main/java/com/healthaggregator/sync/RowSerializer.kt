@@ -11,6 +11,7 @@ import com.healthaggregator.data.entities.LabObservation
 import com.healthaggregator.data.entities.MedicationRecord
 import com.healthaggregator.data.entities.PatientRecord
 import com.healthaggregator.data.entities.SourceRecord
+import com.healthaggregator.data.entities.UserNarrative
 import com.healthaggregator.data.entities.VitalsObservation
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
@@ -245,6 +246,12 @@ class RowSerializer @Inject constructor() {
 		issuedAt = r.instant("issuedAt"),
 		resultReferences = r.str("resultReferences"),
 		importedAt = r.instant("importedAt") ?: Instant.EPOCH,
+	)
+
+	fun fromUserNarrativeRow(r: JsonObject) = UserNarrative(
+		id = r.long("id") ?: UserNarrative.SINGLETON_ID,
+		text = r.strReq("text"),
+		updatedAt = r.instant("updatedAt") ?: Instant.EPOCH,
 	)
 
 	fun fromSourceRecordRow(r: JsonObject) = SourceRecord(

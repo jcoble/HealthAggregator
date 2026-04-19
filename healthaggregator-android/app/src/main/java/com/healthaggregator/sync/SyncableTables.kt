@@ -23,4 +23,5 @@ enum class SyncableTable(val tableName: String, val mergeStrategy: MergeStrategy
 	SOURCE_RECORDS("source_records", MergeStrategy.InsertOrIgnore),
 	CHAT_CONVERSATIONS("chat_conversations", MergeStrategy.LastWriteWinsOn("updatedAt")),
 	CHAT_MESSAGES("chat_messages", MergeStrategy.InsertOrIgnore),
+	USER_NARRATIVE("user_narrative", MergeStrategy.LastWriteWinsOn("updatedAt")),
 }

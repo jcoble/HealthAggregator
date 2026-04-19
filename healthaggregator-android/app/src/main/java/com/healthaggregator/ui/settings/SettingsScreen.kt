@@ -108,6 +108,13 @@ fun SettingsScreen(
 			) { Text("Reset local database") }
 		}
 
+		SectionCard(title = "For my doctor") {
+			DoctorNarrativeEditor(
+				initial = state.narrative,
+				onSave = viewModel::updateNarrative,
+			)
+		}
+
 		SectionCard(title = "AI Assistant") {
 			AiAssistantSettings(
 				secure = viewModel.secureStorage,
@@ -150,6 +157,34 @@ fun SettingsScreen(
 				editingSource = null
 			},
 		)
+	}
+}
+
+@Composable
+private fun DoctorNarrativeEditor(initial: String, onSave: (String) -> Unit) {
+	var draft by remember(initial) { mutableStateOf(initial) }
+	val dirty = draft != initial
+	Text(
+		text = "Notes you want printed on the first page of every exported report — real diagnoses, concerns, history the chart doesn't show. Synced to the laptop too.",
+		style = MaterialTheme.typography.bodySmall,
+		color = MaterialTheme.colorScheme.secondary,
+	)
+	Spacer(Modifier.height(8.dp))
+	OutlinedTextField(
+		value = draft,
+		onValueChange = { draft = it },
+		placeholder = { Text("e.g. Type 2 diabetes diagnosed 2019. CPAP-treated sleep apnea. Intermittent joint pain in left knee since…") },
+		modifier = Modifier.fillMaxWidth().height(220.dp),
+		minLines = 6,
+	)
+	Spacer(Modifier.height(8.dp))
+	Row(modifier = Modifier.fillMaxWidth()) {
+		Spacer(Modifier.weight(1f))
+		if (dirty) {
+			TextButton(onClick = { draft = initial }) { Text("Discard") }
+			Spacer(Modifier.width(8.dp))
+		}
+		Button(onClick = { onSave(draft) }, enabled = dirty) { Text("Save") }
 	}
 }
 

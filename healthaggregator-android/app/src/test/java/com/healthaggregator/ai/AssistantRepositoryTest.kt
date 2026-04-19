@@ -62,6 +62,7 @@ class AssistantRepositoryTest {
 				medications = db.medicationDao(),
 				allergies = db.allergyDao(),
 				documents = db.documentDao(),
+				narrative = db.userNarrativeDao(),
 			),
 			secure = secure,
 		)
