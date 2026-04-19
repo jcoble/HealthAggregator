@@ -9,6 +9,7 @@ SYNCABLE_TABLES = [
     "conditions", "medications", "allergies",
     "encounters", "documents", "diagnostic_reports",
     "source_records", "chat_conversations", "chat_messages",
+    "user_narrative",
 ]
 
 

@@ -112,10 +112,11 @@ def natural_key_for(table_name: str) -> tuple[str, ...]:
         "source_records": ("sourceSystem", "resourceType", "resourceId"),
         "chat_conversations": ("id",),
         "chat_messages": ("id",),
+        "user_narrative": ("id",),
     }[table_name]
 
 
 def strategy_for(table_name: str) -> MergeStrategy:
-    if table_name == "chat_conversations":
+    if table_name in ("chat_conversations", "user_narrative"):
         return MergeStrategy.LWW_UPDATED_AT
     return MergeStrategy.INSERT_OR_IGNORE

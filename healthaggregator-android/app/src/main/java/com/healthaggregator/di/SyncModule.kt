@@ -5,6 +5,7 @@ import com.healthaggregator.sync.SyncClient
 import com.healthaggregator.sync.SyncCredentials
 import com.healthaggregator.sync.SyncRepository
 import com.healthaggregator.sync.RowSerializer
+import com.healthaggregator.data.APP_DATABASE_VERSION
 import com.healthaggregator.data.AppDatabase
 import com.healthaggregator.util.SecureStorage
 import dagger.Module
@@ -56,7 +57,7 @@ object SyncModule {
 		db = db,
 		serializer = serializer,
 		migrationLoader = migrationLoader,
-		phoneSchemaVersion = 5,
+		phoneSchemaVersion = APP_DATABASE_VERSION,
 		isPairedProvider = { secure.laptopHostname != null && secure.laptopToken != null },
 	)
 }

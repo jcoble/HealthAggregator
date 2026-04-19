@@ -20,6 +20,14 @@ import com.healthaggregator.data.dao.UserNarrativeDao
 import com.healthaggregator.data.dao.VitalsDao
 import com.healthaggregator.data.entities.*
 
+/**
+ * Single source of truth for the DB schema version. Room's @Database(version = ...) reads
+ * this, and the sync layer reports it to the laptop daemon via /sync/version so migrations
+ * ship automatically. Bump in lockstep with adding a migration file under assets/migrations.
+ * Do NOT duplicate the number — SyncModule and SyncRepository both reference this constant.
+ */
+const val APP_DATABASE_VERSION = 10
+
 @Database(
 	entities = [
 		PatientRecord::class,
@@ -38,7 +46,7 @@ import com.healthaggregator.data.entities.*
 		ChatMessage::class,
 		UserNarrative::class,
 	],
-	version = 9,
+	version = APP_DATABASE_VERSION,
 	exportSchema = true,
 )
 @TypeConverters(Converters::class)

@@ -1,10 +1,19 @@
 package com.healthaggregator.sync
 
+import com.healthaggregator.data.APP_DATABASE_VERSION
 import com.healthaggregator.data.AppDatabase
 import kotlinx.serialization.json.JsonObject
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
+
+/**
+ * FHIR resource types the user has opted out of entirely — neither pushed nor pulled in the
+ * source_records table. Mirrors FhirImportService.SUPPRESSED_RESOURCE_TYPES (same list for now).
+ * Without this filter, a pull from the laptop would happily re-insert rows that the user just
+ * deleted via migration, because insertAllIgnore only dedups on natural keys, not on intent.
+ */
+private val SUPPRESSED_SYNC_RESOURCE_TYPES = setOf("Condition")
 
 data class SyncResult(
 	val pushedRowsByTable: Map<String, Int>,
@@ -20,7 +29,9 @@ class SyncRepository @Inject constructor(
 	private val db: AppDatabase,
 	private val serializer: RowSerializer,
 	private val migrationLoader: MigrationLoader,
-	private val phoneSchemaVersion: Int = 9,
+	// Defaults to APP_DATABASE_VERSION. The real Hilt binding in SyncModule also reads that
+	// constant; both match so adding a new migration only needs a bump in AppDatabase.kt.
+	private val phoneSchemaVersion: Int = APP_DATABASE_VERSION,
 	private val isPairedProvider: () -> Boolean,
 ) {
 	suspend fun syncNow(): Result<SyncResult> = runCatching {
@@ -67,7 +78,9 @@ class SyncRepository @Inject constructor(
 		rows[SyncableTable.ENCOUNTERS.tableName] = db.encounterDao().getAllSnapshot().map { serializer.toRow(it) }
 		rows[SyncableTable.DOCUMENTS.tableName] = db.documentDao().getAllSnapshot().map { serializer.toRow(it) }
 		rows[SyncableTable.DIAGNOSTIC_REPORTS.tableName] = db.diagnosticReportDao().getAllSnapshot().map { serializer.toRow(it) }
-		rows[SyncableTable.SOURCE_RECORDS.tableName] = db.sourceRecordDao().getAllSnapshot().map { serializer.toRow(it) }
+		rows[SyncableTable.SOURCE_RECORDS.tableName] = db.sourceRecordDao().getAllSnapshot()
+			.filter { it.resourceType !in SUPPRESSED_SYNC_RESOURCE_TYPES }
+			.map { serializer.toRow(it) }
 		rows[SyncableTable.CHAT_CONVERSATIONS.tableName] = db.chatDao().getAllConversationsSnapshot().map { serializer.toRow(it) }
 		rows[SyncableTable.CHAT_MESSAGES.tableName] = db.chatDao().getAllMessagesSnapshot().map { serializer.toRow(it) }
 		rows[SyncableTable.USER_NARRATIVE.tableName] = db.userNarrativeDao().getAllSnapshot().map { serializer.toRow(it) }
@@ -138,6 +151,7 @@ class SyncRepository @Inject constructor(
 
 	private suspend fun mergeSourceRecords(rows: List<JsonObject>): Int {
 		val entities = rows.map { serializer.fromSourceRecordRow(it).copy(id = 0L) }
+			.filter { it.resourceType !in SUPPRESSED_SYNC_RESOURCE_TYPES }
 		return db.sourceRecordDao().insertAllIgnore(entities).count { it != -1L }
 	}
 
