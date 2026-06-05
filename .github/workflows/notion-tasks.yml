@@ -1,0 +1,154 @@
+name: Notion task sync
+
+# Mirrors GitHub work into the Notion Command Center "Tasks" DB:
+#   - push to a non-main branch        -> task created, Status = Doing
+#   - PR opened/reopened/ready         -> task ensured, Status = Doing
+#   - PR merged                        -> task Status = Done
+#   - issue opened/reopened            -> task created, Status = To Do
+#   - issue closed                     -> task Status = Done
+# Each created task gets a RICH body: commit list / PR or issue description,
+# author, and a link back to GitHub. Idempotent via a "Key" property
+# (repo:branch or repo:issue:N). Requires repo secret NOTION_TOKEN.
+
+on:
+  push:
+    branches-ignore:
+      - main
+  pull_request:
+    types: [opened, reopened, ready_for_review, closed]
+  issues:
+    types: [opened, reopened, closed]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: notion-sync-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+        with:
+          script: |
+            const TOKEN = process.env.NOTION_TOKEN;
+            if (!TOKEN) { core.warning('NOTION_TOKEN not set; skipping'); return; }
+            const DS = 'f62084c0-3d33-4560-8fce-de2834807ca3';        // Tasks data source
+            const PROJECT = '376394b0-689d-8131-b59e-c3d6d36cefc2';   // HealthAggregator project page
+            const V = '2026-03-11';
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            async function notion(path, method, body) {
+              const res = await fetch('https://api.notion.com/v1' + path, {
+                method,
+                headers: {
+                  'Authorization': 'Bearer ' + TOKEN,
+                  'Notion-Version': V,
+                  'Content-Type': 'application/json',
+                },
+                body: body ? JSON.stringify(body) : undefined,
+              });
+              const json = await res.json().catch(() => ({}));
+              if (!res.ok) core.warning(`Notion ${method} ${path} -> ${res.status} ${JSON.stringify(json)}`);
+              return json;
+            }
+            const findByKey = async (key) => {
+              const r = await notion(`/data_sources/${DS}/query`, 'POST',
+                { filter: { property: 'Key', rich_text: { equals: key } }, page_size: 1 });
+              return (r.results && r.results[0]) ? r.results[0].id : null;
+            };
+
+            // --- block helpers ---
+            const T = (s) => (s == null ? '' : String(s)).slice(0, 1900);
+            const para = (s) => ({ object: 'block', type: 'paragraph', paragraph: { rich_text: [{ type: 'text', text: { content: T(s) } }] } });
+            const h3 = (s) => ({ object: 'block', type: 'heading_3', heading_3: { rich_text: [{ type: 'text', text: { content: T(s) } }] } });
+            const bullet = (s) => ({ object: 'block', type: 'bulleted_list_item', bulleted_list_item: { rich_text: [{ type: 'text', text: { content: T(s) } }] } });
+            const bookmark = (url) => ({ object: 'block', type: 'bookmark', bookmark: { url } });
+            // render a multiline (lightly-markdown) string into blocks
+            const mdBlocks = (str) => (str || '').split('\n').map((l) => {
+              if (/^#{1,3} /.test(l)) return h3(l.replace(/^#{1,3} /, ''));
+              if (/^[-*] /.test(l)) return bullet(l.slice(2));
+              if (l.trim() === '') return null;
+              return para(l);
+            }).filter(Boolean).slice(0, 40);
+
+            async function createTask({ key, title, status, children }) {
+              await notion('/pages', 'POST', {
+                parent: { type: 'data_source_id', data_source_id: DS },
+                properties: {
+                  Name: { title: [{ text: { content: T(title).slice(0, 200) } }] },
+                  Status: { select: { name: status } },
+                  Source: { select: { name: 'GitHub' } },
+                  Project: { relation: [{ id: PROJECT }] },
+                  Key: { rich_text: [{ text: { content: key } }] },
+                },
+                children: (children || []).slice(0, 90),
+              });
+              core.info(`created task: ${key}`);
+            }
+            const setStatus = async (id, status) => {
+              await notion(`/pages/${id}`, 'PATCH', { properties: { Status: { select: { name: status } } } });
+              core.info(`status -> ${status} (${id})`);
+            };
+
+            const ev = context.eventName;
+            if (ev === 'push') {
+              const branch = context.ref.replace('refs/heads/', '');
+              if (branch === 'main' || branch.startsWith('dependabot/')) return;
+              const key = `${repo}:${branch}`;
+              if (await findByKey(key)) return;
+              const commits = context.payload.commits || [];
+              const hc = context.payload.head_commit;
+              const sender = (context.payload.sender && context.payload.sender.login)
+                || (context.payload.pusher && context.payload.pusher.name) || '';
+              const title = (hc && hc.message) ? hc.message.split('\n')[0] : branch;
+              const children = [para(`🔀 Branch \`${branch}\` on ${owner}/${repo}${sender ? ' · pushed by ' + sender : ''}`)];
+              if (commits.length) {
+                children.push(h3(`Commits (${commits.length})`));
+                for (const c of commits.slice(0, 15)) children.push(bullet(c.message.split('\n')[0]));
+              }
+              if (hc && hc.message && hc.message.includes('\n')) {
+                children.push(h3('Latest commit message'));
+                children.push(...mdBlocks(hc.message.split('\n').slice(1).join('\n')));
+              }
+              children.push(bookmark(`https://github.com/${owner}/${repo}/tree/${branch}`));
+              await createTask({ key, title, status: 'Doing', children });
+            } else if (ev === 'pull_request') {
+              const pr = context.payload.pull_request;
+              const action = context.payload.action;
+              const key = `${repo}:${pr.head.ref}`;
+              if (action === 'closed' && pr.merged) {
+                const id = await findByKey(key);
+                if (id) await setStatus(id, 'Done');
+              } else if (['opened', 'reopened', 'ready_for_review'].includes(action)) {
+                const id = await findByKey(key);
+                if (id) { await setStatus(id, 'Doing'); return; }
+                const children = [
+                  para(`🔀 PR #${pr.number}: ${pr.title}`),
+                  para(`\`${pr.head.ref}\` → \`${pr.base.ref}\`${pr.user ? ' · by ' + pr.user.login : ''}`),
+                ];
+                if (pr.body) { children.push(h3('Description')); children.push(...mdBlocks(pr.body)); }
+                children.push(bookmark(pr.html_url));
+                await createTask({ key, title: pr.title, status: 'Doing', children });
+              }
+            } else if (ev === 'issues') {
+              const issue = context.payload.issue;
+              const action = context.payload.action;
+              const key = `${repo}:issue:${issue.number}`;
+              if (action === 'closed') {
+                const id = await findByKey(key);
+                if (id) await setStatus(id, 'Done');
+              } else if (!(await findByKey(key))) {
+                const labels = (issue.labels || []).map((l) => l.name).filter(Boolean).join(', ');
+                const children = [para(`🐛 Issue #${issue.number}: ${issue.title}${issue.user ? ' · by ' + issue.user.login : ''}`)];
+                if (issue.body) { children.push(h3('Details')); children.push(...mdBlocks(issue.body)); }
+                if (labels) children.push(para(`Labels: ${labels}`));
+                children.push(bookmark(issue.html_url));
+                await createTask({ key, title: `#${issue.number} ${issue.title}`, status: 'To Do', children });
+              }
+            }
