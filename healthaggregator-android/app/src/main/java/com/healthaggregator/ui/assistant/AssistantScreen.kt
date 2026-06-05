@@ -19,7 +19,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.ui.Alignment
 import androidx.compose.runtime.Composable
@@ -32,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.healthaggregator.ui.components.AppTopBar
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -74,11 +74,10 @@ fun AssistantScreen(
 		},
 	) {
 		Column(modifier = Modifier.fillMaxSize()) {
-			TopAppBar(
-				title = {
-					val title = state.conversations.firstOrNull { it.id == state.activeConversationId }?.title ?: "Assistant"
-					Text(title)
-				},
+			val activeTitle = state.conversations.firstOrNull { it.id == state.activeConversationId }?.title
+			AppTopBar(
+				title = activeTitle ?: "Assistant",
+				subtitle = if (activeTitle != null) "Chat" else null,
 				navigationIcon = {
 					IconButton(onClick = { scope.launch { drawerState.open() } }) {
 						Icon(Icons.Outlined.Menu, contentDescription = "Conversations")

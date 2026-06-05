@@ -20,7 +20,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -29,6 +28,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.healthaggregator.ui.components.AppTopBar
 import com.healthaggregator.ui.components.EmptyState
 import com.healthaggregator.ui.components.FilterChipRow
 import com.healthaggregator.ui.components.RecordRow
@@ -51,11 +51,11 @@ fun RecordsScreen(
 	val labsState by viewModel.labsState.collectAsStateWithLifecycle()
 
 	Column(modifier = Modifier.fillMaxSize()) {
-		TopAppBar(title = { Text("Records") })
+		AppTopBar(title = "Records")
 
 		SearchBar(query = query, onQueryChange = viewModel::setQuery)
 
-		Row(modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+		Row(modifier = Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
 			SortChip(order = sort, onToggle = viewModel::toggleSort)
 		}
 
@@ -64,7 +64,7 @@ fun RecordsScreen(
 			selected = filter,
 			onSelect = viewModel::setFilter,
 			label = { it.chipLabel },
-			modifier = Modifier.padding(vertical = 8.dp),
+			modifier = Modifier.padding(top = 4.dp, bottom = 6.dp),
 		)
 		HorizontalDivider()
 

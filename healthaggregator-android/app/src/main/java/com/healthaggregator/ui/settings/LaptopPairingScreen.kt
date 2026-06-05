@@ -7,6 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.healthaggregator.ui.components.AppTopBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -22,14 +23,7 @@ fun LaptopPairingScreen(
 	}
 
 	Scaffold(
-		topBar = {
-			TopAppBar(
-				title = { Text("Pair with laptop") },
-				navigationIcon = {
-					TextButton(onClick = onBack) { Text("Back") }
-				},
-			)
-		},
+		topBar = { AppTopBar(title = "Pair with laptop", onBack = onBack) },
 	) { padding ->
 		Column(
 			modifier = Modifier

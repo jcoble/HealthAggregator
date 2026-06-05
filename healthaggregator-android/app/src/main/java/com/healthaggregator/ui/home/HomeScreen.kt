@@ -24,11 +24,9 @@ import androidx.compose.material.icons.outlined.Science
 import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -41,6 +39,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.healthaggregator.sync.SyncState
+import com.healthaggregator.ui.components.AppTopBar
 import com.healthaggregator.ui.components.BannerVariant
 import com.healthaggregator.ui.components.EmptyState
 import com.healthaggregator.ui.components.ErrorBanner
@@ -65,7 +64,7 @@ fun HomeScreen(
 	}
 
 	Column(modifier = Modifier.fillMaxSize()) {
-		TopAppBar(title = { Text("Health Aggregator") })
+		AppTopBar(title = "Health Aggregator")
 
 		when {
 			!state.healthConnectAvailable -> {
@@ -192,7 +191,7 @@ fun HomeScreen(
 @Composable
 private fun PreviewNoPermissions() = HealthAggregatorTheme {
 	Column(modifier = Modifier.fillMaxSize()) {
-		CenterAlignedTopAppBar(title = { Text("Health Aggregator") })
+		AppTopBar(title = "Health Aggregator")
 		EmptyState(
 			icon = Icons.Outlined.Warning,
 			title = "Grant Health Connect access",
@@ -208,7 +207,7 @@ private fun PreviewNoPermissions() = HealthAggregatorTheme {
 @Composable
 private fun PreviewPopulated() = HealthAggregatorTheme {
 	Column(modifier = Modifier.fillMaxSize()) {
-		CenterAlignedTopAppBar(title = { Text("Health Aggregator") })
+		AppTopBar(title = "Health Aggregator")
 		Row(
 			modifier = Modifier
 				.fillMaxWidth()

@@ -2,6 +2,7 @@ package com.healthaggregator.ui.components
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
@@ -38,7 +39,8 @@ fun SearchBar(
 		},
 		singleLine = true,
 		keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-		modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+		shape = RoundedCornerShape(20.dp),
+		modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
 	)
 }
 

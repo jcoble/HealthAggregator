@@ -7,6 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.healthaggregator.ui.components.AppTopBar
 import java.text.DateFormat
 import java.util.Date
 
@@ -20,12 +21,7 @@ fun SyncLogScreen(
 	LaunchedEffect(Unit) { viewModel.refreshFromStorage() }
 
 	Scaffold(
-		topBar = {
-			TopAppBar(
-				title = { Text("Sync log") },
-				navigationIcon = { TextButton(onClick = onBack) { Text("Back") } },
-			)
-		},
+		topBar = { AppTopBar(title = "Sync log", onBack = onBack) },
 	) { padding ->
 		Column(modifier = Modifier.padding(padding).padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
 			if (state.lastSyncAt > 0) {

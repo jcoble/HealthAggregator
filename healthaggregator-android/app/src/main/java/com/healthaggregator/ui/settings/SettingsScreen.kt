@@ -21,7 +21,6 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -34,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.healthaggregator.data.entities.MedicalDataSource
+import com.healthaggregator.ui.components.AppTopBar
 import com.healthaggregator.ui.components.SourceBadge
 import com.healthaggregator.ui.theme.HealthAggregatorTheme
 import java.time.Instant
@@ -53,7 +53,7 @@ fun SettingsScreen(
 	Column(
 		modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
 	) {
-		TopAppBar(title = { Text("Settings") })
+		AppTopBar(title = "Settings")
 
 		LaptopSyncSection(
 			onPair = onPairLaptop,
@@ -248,7 +248,7 @@ private fun humanReadableBytes(bytes: Long): String = when {
 @Composable
 private fun PreviewSettingsPopulated() = HealthAggregatorTheme {
 	Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-		TopAppBar(title = { Text("Settings") })
+		AppTopBar(title = "Settings")
 		SectionCard(title = "Health Connect") {
 			LabelValueRow("Available", "Yes")
 			LabelValueRow("Permissions granted", "Yes")
